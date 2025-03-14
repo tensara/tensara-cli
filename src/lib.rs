@@ -1,11 +1,14 @@
+pub mod client;
 pub mod parser;
 
 use clap::ArgMatches;
+use serde::{Deserialize, Serialize};
 
+#[derive(Serialize, Deserialize)]
 pub struct Payload {
-    problem_name: String,
+    problem: String,
     solution_code: String,
-    gpu_type: String,
+    gpu: String,
 }
 
 impl Payload {
@@ -21,21 +24,15 @@ impl Payload {
     }
 
     fn from_subcommand(matches: &ArgMatches) -> Self {
-        let problem_name = parser::get_problem_name(matches).to_string();
+        let problem = parser::get_problem_name(matches).to_string();
         let solution_file = parser::get_solution_file(matches);
-        let gpu_type = parser::get_gpu_type(matches).to_string();
+        let gpu = parser::get_gpu_type(matches).to_string();
 
         Self {
-            problem_name,
+            problem,
             solution_code: Self::get_file_contents(solution_file),
-            gpu_type,
+            gpu,
         }
-    }
-
-    pub fn display(&self) {
-        println!("Problem name: {:?}", self.problem_name);
-        println!("Solution code: {:?}", self.solution_code);
-        println!("GPU type: {:?}", self.gpu_type);
     }
 
     fn get_file_contents(solution_file: &str) -> String {
