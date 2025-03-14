@@ -1,10 +1,6 @@
-use tensara::commands;
+use tensara::parser;
 
 fn main() {
-    let commands = commands::new();
-    let command_matches = commands
-        .get("checker")
-        .expect("Test command is not available");
-
+    let command_matches = parser::get_matches();
     println!("{:?}", command_matches);
 }

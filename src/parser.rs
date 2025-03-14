@@ -1,16 +1,7 @@
 use clap::{command, Arg, ArgMatches, Command};
-use std::collections::HashMap;
 
-pub fn new() -> HashMap<String, ArgMatches> {
-    let mut map = HashMap::new();
-    init_commands(&mut map);
-    map
-}
-
-fn init_commands(map: &mut HashMap<String, ArgMatches>) {
-    map.insert(
-        "checker".to_string(),
-        command!()
+pub fn get_matches() -> ArgMatches {
+    command!()
             .about(
                 "A CLI tool for submitting and benchmarking solutions to GPU programming problems on tensara. \
                 \nFind available problems at https://tensara.org/problems",
@@ -74,7 +65,5 @@ fn init_commands(map: &mut HashMap<String, ArgMatches>) {
                             .required(false),
                     )
             )
-
-            .get_matches(),
-    );
+            .get_matches()
 }
