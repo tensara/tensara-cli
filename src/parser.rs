@@ -83,7 +83,10 @@ impl TypedValueParser for SolutionFile {
             if ext_str != "cu" && ext_str != "py" {
                 return Err(clap::Error::raw(
                     clap::error::ErrorKind::InvalidValue,
-                    format!("File must be a .cu or .py file: {} \n", path_str),
+                    format!(
+                        "File must be a .cu or .py file. Found file with extension: {} \n",
+                        ext_str
+                    ),
                 ));
             }
         } else {
@@ -159,8 +162,6 @@ pub fn get_matches() -> ArgMatches {
                     )
                     .arg(
                         Arg::new("gpu_type")
-                            .short('g')
-                            .long("gpu")
                             .value_name("GPU_TYPE")
                             .help("Type of the GPU to use")
                             .default_value("T4")
@@ -191,8 +192,6 @@ pub fn get_matches() -> ArgMatches {
                     )
                     .arg(
                         Arg::new("gpu_type")
-                            .short('g')
-                            .long("gpu")
                             .value_name("GPU_TYPE")
                             .help("Type of the GPU to use")
                             .default_value("T4")

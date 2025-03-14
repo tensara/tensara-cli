@@ -1,4 +1,5 @@
 pub mod parser;
+
 use clap::ArgMatches;
 
 pub struct Payload {
