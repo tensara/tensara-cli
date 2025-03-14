@@ -50,7 +50,6 @@ impl std::fmt::Display for ProblemNames {
     }
 }
 
-// A custom parser that validates file existence and extension
 #[derive(Clone)]
 struct SolutionFile;
 
