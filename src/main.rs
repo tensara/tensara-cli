@@ -1,6 +1,6 @@
-use tensara::CliInput;
+use tensara::Payload;
 
 fn main() {
-    let cli_input = CliInput::new();
-    cli_input.display();
+    let payload = Payload::new();
+    payload.display();
 }

@@ -1,15 +1,14 @@
 pub mod parser;
 use clap::ArgMatches;
 use parser::{ProblemNames, GPU};
-use std::path::PathBuf;
 
-pub struct CliInput {
+pub struct Payload {
     problem_name: ProblemNames,
-    solution_file: PathBuf,
+    solution_code: String,
     gpu_type: GPU,
 }
 
-impl CliInput {
+impl Payload {
     pub fn new() -> Self {
         let command_matches = parser::get_matches();
         match command_matches.subcommand_name() {
@@ -28,14 +27,18 @@ impl CliInput {
 
         Self {
             problem_name: *problem_name,
-            solution_file: PathBuf::from(solution_file),
+            solution_code: Self::get_file_contents(solution_file),
             gpu_type: *gpu_type,
         }
     }
 
     pub fn display(&self) {
         println!("Problem name: {:?}", self.problem_name);
-        println!("Solution file: {:?}", self.solution_file);
+        println!("Solution code: {:?}", self.solution_code);
         println!("GPU type: {:?}", self.gpu_type);
+    }
+
+    fn get_file_contents(solution_file: &str) -> String {
+        std::fs::read_to_string(solution_file).unwrap()
     }
 }
