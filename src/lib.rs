@@ -1,11 +1,10 @@
 pub mod parser;
 use clap::ArgMatches;
-use parser::{ProblemNames, GPU};
 
 pub struct Payload {
-    problem_name: ProblemNames,
+    problem_name: String,
     solution_code: String,
-    gpu_type: GPU,
+    gpu_type: String,
 }
 
 impl Payload {
@@ -21,14 +20,14 @@ impl Payload {
     }
 
     fn from_subcommand(matches: &ArgMatches) -> Self {
-        let problem_name = parser::get_problem_name(matches);
+        let problem_name = parser::get_problem_name(matches).to_string();
         let solution_file = parser::get_solution_file(matches);
-        let gpu_type = parser::get_gpu_type(matches);
+        let gpu_type = parser::get_gpu_type(matches).to_string();
 
         Self {
-            problem_name: *problem_name,
+            problem_name,
             solution_code: Self::get_file_contents(solution_file),
-            gpu_type: *gpu_type,
+            gpu_type,
         }
     }
 
