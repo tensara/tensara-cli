@@ -1,4 +1,4 @@
-use clap::{command, Arg, ArgMatches};
+use clap::{command, Arg, ArgMatches, Command};
 use std::collections::HashMap;
 
 pub fn new() -> HashMap<String, ArgMatches> {
@@ -11,36 +11,70 @@ fn init_commands(map: &mut HashMap<String, ArgMatches>) {
     map.insert(
         "checker".to_string(),
         command!()
-            .arg(
-                Arg::new("runner_type")
-                    .value_name("RUNNER_TYPE")
-                    .help("Type of the runner to use: checker or benchmark")
-                    .required(true),
+            .about(
+                "A CLI tool for submitting and benchmarking solutions to GPU programming problems on tensara. \
+                \nFind available problems at https://tensara.org/problems",
             )
-            .arg(
-                Arg::new("problem_name")
-                    .short('p')
-                    .long("problem")
-                    .value_name("PROBLEM_NAME")
-                    .help("Name of the problem to test")
-                    .required(true),
+            .subcommand_required(true)
+            .subcommand(
+                Command::new("checker")
+                    .about("Submit a solution to a problem and check if it is correct")
+                    .arg(
+                        Arg::new("problem_name")
+                            .short('p')
+                            .long("problem")
+                            .value_name("PROBLEM_NAME")
+                            .help("Name of the problem to test")
+                            .required(true),
+                    )
+                    .arg(
+                        Arg::new("solution_file")
+                            .short('s')
+                            .long("solution")
+                            .value_name("SOLUTION_FILE")
+                            .help("Relative path to the solution file")
+                            .required(true),
+                    )
+                    .arg(
+                        Arg::new("gpu_type")
+                            .short('g')
+                            .long("gpu")
+                            .value_name("GPU_TYPE")
+                            .help("Type of the GPU to use")
+                            .default_value("T4")
+                            .required(false),
+                    )
             )
-            .arg(
-                Arg::new("solution_file")
-                    .short('s')
-                    .long("solution")
-                    .value_name("SOLUTION_FILE")
-                    .help("Relative path to the solution file")
-                    .required(true),
+            .subcommand(
+                Command::new("benchmark")
+                    .about("Benchmark a solution and get the performance metrics for a given problem")
+                    .arg(
+                        Arg::new("problem_name")
+                            .short('p')
+                            .long("problem")
+                            .value_name("PROBLEM_NAME")
+                            .help("Name of the problem to test")
+                            .required(true),
+                    )
+                    .arg(
+                        Arg::new("solution_file")
+                            .short('s')
+                            .long("solution")
+                            .value_name("SOLUTION_FILE")
+                            .help("Relative path to the solution file")
+                            .required(true),
+                    )
+                    .arg(
+                        Arg::new("gpu_type")
+                            .short('g')
+                            .long("gpu")
+                            .value_name("GPU_TYPE")
+                            .help("Type of the GPU to use")
+                            .default_value("T4")
+                            .required(false),
+                    )
             )
-            .arg(
-                Arg::new("gpu_type")
-                    .short('g')
-                    .long("gpu")
-                    .value_name("GPU_TYPE")
-                    .help("Type of the GPU to use (default: T4)")
-                    .required(false),
-            )
+
             .get_matches(),
     );
 }
