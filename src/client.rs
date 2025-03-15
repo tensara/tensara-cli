@@ -1,4 +1,4 @@
-use std::io::{self, Read, Write};
+use std::io::Read;
 
 use reqwest::blocking::Client;
 
@@ -12,23 +12,11 @@ pub fn send_get_request(endpoint: &str) {
     }
 }
 
-pub fn send_post_request(endpoint: &str, payload: &str) {
+pub fn send_post_request(endpoint: &str, payload: &str) -> impl Read {
     let client = Client::new();
-    let mut response = client
+    client
         .post(endpoint)
         .body(payload.to_string())
         .send()
-        .unwrap();
-
-    let mut buffer = [0; 1024];
-    let stdout = io::stdout();
-    let mut handle = stdout.lock();
-
-    while let Ok(size) = response.read(&mut buffer) {
-        if size == 0 {
-            break;
-        }
-        handle.write_all(&buffer[0..size]).unwrap();
-        handle.flush().unwrap();
-    }
+        .unwrap()
 }

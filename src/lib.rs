@@ -1,5 +1,6 @@
 pub mod client;
 pub mod parser;
+pub mod pretty;
 
 use clap::ArgMatches;
 use serde::{Deserialize, Serialize};
