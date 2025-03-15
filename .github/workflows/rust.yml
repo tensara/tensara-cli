@@ -1,0 +1,60 @@
+name: Build and Release
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*"
+jobs:
+  build:
+    name: Build ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_name: tensara
+            asset_name: tensara-linux-amd64
+          - os: windows-latest
+            artifact_name: tensara.exe
+            asset_name: tensara-windows-amd64.exe
+          - os: macos-latest
+            artifact_name: tensara
+            asset_name: tensara-macos-amd64
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      
+      - name: Build binary
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release
+        env:
+          # This is passed in at compile time from github secrets, NOT ENV
+          MODAL_SLUG: ${{ secrets.MODAL_SLUG }}
+      
+      - name: Rename binary for consistent naming
+        run: |
+          if [ "${{ matrix.os }}" == "windows-latest" ]; then
+            cp target/release/${{ matrix.artifact_name }} ${{ matrix.asset_name }}
+          else
+            cp target/release/${{ matrix.artifact_name }} ${{ matrix.asset_name }}
+          fi
+        shell: bash
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ${{ matrix.asset_name }}
+          name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          token: ${{ secrets.GITHUB_TOKEN }}
