@@ -198,7 +198,7 @@ pub fn pretty_print_benchmark_response(mut response: impl Read) {
         .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏");
 
     let progress_style = ProgressStyle::default_bar()
-        .template("{prefix:.bold.blue} [{bar:40.cyan/blue}] {pos}/{len} {msg}")
+        .template("{prefix:.bold.blue} [{bar:40.blue/cyan}] {pos}/{len} {msg}")
         .unwrap()
         .progress_chars("█▓▒░  ");
 
@@ -239,24 +239,19 @@ pub fn pretty_print_benchmark_response(mut response: impl Read) {
                             compilation_pb.finish_with_message("Error detected!".to_string());
                             compilation_pb.set_prefix("❌");
 
-                            // Clear progress bars
                             compilation_pb.finish_and_clear();
                             multi_progress.clear().unwrap();
 
-                            // Print error header
                             println!("\n{}", style("⚠️ ERROR OCCURRED ⚠️").red().bold());
                             println!("{}", style("═".repeat(50)).dim());
 
-                            // Extract error message and details
                             let error_message = json["error"].as_str().unwrap_or("Unknown error");
                             println!("{}: {}", style("Error").red().bold(), error_message);
 
-                            // Print detailed error info if available
                             if let Some(details) = json["details"].as_str() {
                                 println!("\n{}", style("Details:").yellow().bold());
                                 println!("{}", style("─".repeat(50)).dim());
 
-                                // Format compiler errors with improved readability
                                 let formatted_details = details
                                     .lines()
                                     .map(|line| {
@@ -284,7 +279,6 @@ pub fn pretty_print_benchmark_response(mut response: impl Read) {
                                     .bold()
                             );
 
-                            // Return early to prevent further processing
                             return;
                         }
                         Some("running") => {
@@ -338,22 +332,18 @@ pub fn pretty_print_benchmark_response(mut response: impl Read) {
                             }
                         }
                         Some("success") => {
-                            // Make sure we clear all progress bars
                             if let Some(progress) = benchmark_progress.take() {
                                 progress.finish_and_clear();
                             }
                             compilation_pb.finish_and_clear();
 
-                            // Clear remaining progress bars and wait to ensure terminal state is clean
                             multi_progress.clear().unwrap();
                             std::thread::sleep(Duration::from_millis(500));
 
-                            // Average performance metrics
                             let avg_gflops = json["gflops"].as_f64().unwrap_or(0.0);
                             let avg_runtime = json["runtime_ms"].as_f64().unwrap_or(0.0);
                             let total = json["total_tests"].as_u64().unwrap_or(0);
 
-                            // Print summary header with performance metrics
                             println!("{}", style("✨ BENCHMARK RESULTS ✨").green().bold());
                             println!("{}", style("═".repeat(65)).dim());
                             println!(
@@ -367,7 +357,6 @@ pub fn pretty_print_benchmark_response(mut response: impl Read) {
                             println!("{:<25} {:>15.2} ms", "Average Runtime:", avg_runtime);
                             println!("{}", style("═".repeat(65)).dim());
 
-                            // Sort results by runtime for better visualization
                             println!("\n{}", style("Detailed Results:").bold().underlined());
                             println!(
                                 "{:<5} {:>15} {:>15} {:>15}",
@@ -378,7 +367,6 @@ pub fn pretty_print_benchmark_response(mut response: impl Read) {
                             );
                             println!("{}", style("─".repeat(65)).dim());
 
-                            // Print individual benchmark results
                             for (i, result) in benchmark_results.iter().enumerate() {
                                 let gflops = result["gflops"].as_f64().unwrap_or(0.0);
                                 let runtime = result["runtime_ms"].as_f64().unwrap_or(0.0);
@@ -403,7 +391,6 @@ pub fn pretty_print_benchmark_response(mut response: impl Read) {
                                 );
                             }
 
-                            // Create a simple ASCII performance graph based on GFLOPS
                             if !benchmark_results.is_empty() {
                                 println!(
                                     "\n{}",
@@ -411,29 +398,25 @@ pub fn pretty_print_benchmark_response(mut response: impl Read) {
                                 );
                                 println!("{}", style("─".repeat(65)).dim());
 
-                                // Find the max GFLOPS for scaling
                                 let max_gflops = benchmark_results
                                     .iter()
                                     .filter_map(|r| r["gflops"].as_f64())
                                     .fold(0.0, |max, val| if val > max { val } else { max });
 
-                                // Graph width (characters)
                                 let graph_width = 40;
 
                                 for (i, result) in benchmark_results.iter().enumerate() {
                                     let gflops = result["gflops"].as_f64().unwrap_or(0.0);
-
-                                    // Calculate bar length scaled to max_gflops
+                                    let name = benchmark_names.get(i).unwrap();
                                     let bar_length =
                                         ((gflops / max_gflops) * graph_width as f64) as usize;
 
-                                    // Format label with benchmark number and GFLOPS value
-                                    let label = format!("#{:<2} ({:.2})", i + 1, gflops);
+                                    let label = format!("{:<15} ({:.2})", name, gflops);
 
-                                    // Create the bar with a gradient from blue to cyan
                                     let bar = "█".repeat(bar_length);
+                                    let styled_bar = style(bar).green();
 
-                                    println!("{:<12} {}", label, style(bar).cyan());
+                                    println!("{:<12} {}", label, styled_bar);
                                 }
                             }
 
