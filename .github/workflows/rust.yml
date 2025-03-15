@@ -12,6 +12,7 @@ permissions:
 
 jobs:
   build:
+    permissions: write-all
     name: Build ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     strategy:
