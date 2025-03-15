@@ -4,6 +4,11 @@ on:
     # Only trigger on tags starting with 'v'
     tags:
       - "v*"
+
+# Add permissions needed for creating releases
+permissions:
+  contents: write
+
 jobs:
   build:
     name: Build ${{ matrix.os }}
