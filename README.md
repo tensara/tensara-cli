@@ -1,6 +1,8 @@
-# CLI for Tensara submissions
+# CLI for Tensara submissions (Beta)
 
-## Usage (for developmen)
+Currently in beta. If you would like to test it, go to modal.com and spin up an endpoint using the tensara/engine/python_engine.py file. Put that endpoint in a .env file (see example) and you should be able to run the checker and benchmark
+
+## Usage (for development)
 
 ```bash
 cargo run -- (checker | benchmark) --problem <problem_name> --solution <solution_file> --gpu <gpu_type>
