@@ -30,4 +30,4 @@ Supports the same languages and GPUS as the Tensara engine.
 
 
 You can see this Loom video for a run of the checker and benchmark: 
-<iframe https://www.loom.com/share/72feb4242b504039b434fefa1b8b8d1e?sid=96e1dbf7-ac91-4ee2-9c93-9cbd664c9e92></iframe>
+https://www.loom.com/share/72feb4242b504039b434fefa1b8b8d1e?sid=96e1dbf7-ac91-4ee2-9c93-9cbd664c9e92
