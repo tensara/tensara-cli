@@ -170,10 +170,18 @@ pub fn parse_args(args: Option<Vec<&str>>) -> Result<ArgMatches, clap::Error> {
                 "A CLI tool for submitting and benchmarking solutions to GPU programming problems on tensara. \
                 \nFind available problems at https://tensara.org/problems",
             )
-            .subcommand_required(true)
             .subcommand(
                 Command::new("checker")
                     .about("Submit a solution to a problem and check if it is correct")
+                    .arg(
+                        Arg::new("gpu_type")
+                            .short('g')
+                            .value_name("GPU_TYPE")
+                            .help("Type of the GPU to use")
+                            .default_value("T4")
+                            .required(false)
+                            .value_parser(GPUParser),
+                    )
                     .arg(
                         Arg::new("problem_name")
                             .short('p')
@@ -191,7 +199,11 @@ pub fn parse_args(args: Option<Vec<&str>>) -> Result<ArgMatches, clap::Error> {
                             .help("Relative path to the solution file")
                             .value_parser(SolutionFile)
                             .required(true),
-                    )
+                    )                    
+            )
+            .subcommand(
+                Command::new("benchmark")
+                    .about("Benchmark a solution and get the performance metrics for a given problem")
                     .arg(
                         Arg::new("gpu_type")
                             .value_name("GPU_TYPE")
@@ -200,10 +212,6 @@ pub fn parse_args(args: Option<Vec<&str>>) -> Result<ArgMatches, clap::Error> {
                             .required(false)
                             .value_parser(GPUParser),
                     )
-            )
-            .subcommand(
-                Command::new("benchmark")
-                    .about("Benchmark a solution and get the performance metrics for a given problem")
                     .arg(
                         Arg::new("problem_name")
                             .short('p')
@@ -221,14 +229,6 @@ pub fn parse_args(args: Option<Vec<&str>>) -> Result<ArgMatches, clap::Error> {
                             .help("Relative path to the solution file")
                             .value_parser(SolutionFile)
                             .required(true)
-                    )
-                    .arg(
-                        Arg::new("gpu_type")
-                            .value_name("GPU_TYPE")
-                            .help("Type of the GPU to use")
-                            .default_value("T4")
-                            .value_parser(GPUParser)
-                            .required(false),
                     )
             );
 

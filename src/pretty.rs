@@ -601,7 +601,7 @@ fn print_invalid_file_error() {
     println!("  • File must be either a .cu (CUDA) or .py (Python) file");
     println!("  • File must be readable");
 
-    println!("\n{}", style("Example:").yellow().bold());
+    println!("\n{}", style("Example:").yellow().bright().bold());
     println!("  tensara checker -p relu -s ./my_solution.cu");
 
     println!("{}", style("═".repeat(60)).dim());
@@ -619,11 +619,12 @@ fn print_missing_arg_error(error_message: &str) {
     println!("{}", style("─".repeat(60)).dim());
     println!(
         "  • {}",
-        style("tensara checker -p relu -s ./solution.cu").cyan()
+        style("tensara checker --problem relu --solution ./solution.cu").yellow()
     );
     println!(
         "  • {}",
-        style("tensara benchmark -p matrix-vector -s ./solution.py").cyan()
+        style("tensara benchmark -g A100 --problem matrix-vector --solution ./solution.py")
+            .yellow()
     );
 
     println!(
@@ -668,4 +669,59 @@ fn extract_value_from_error(error_message: &str) -> Option<String> {
         return Some(parts[2].trim().to_string());
     }
     None
+}
+
+pub fn print_welcome_message() {
+    println!("\n{}", style("✨ WELCOME TO TENSARA ✨").blue().bold());
+    println!("{}", style("═".repeat(60)).dim());
+
+    println!("\n{}", style("About:").blue().bold());
+    println!("A CLI tool for submitting and benchmarking solutions to GPU programming problems.");
+    println!(
+        "Find available problems at: {}",
+        style("https://tensara.org/problems").yellow()
+    );
+
+    println!("\n{}", style("Available Commands:").blue().bold());
+    println!("{}", style("─".repeat(60)).dim());
+    println!(
+        "  • {} - {}",
+        style("checker").green().bold(),
+        "Submit a solution to a problem and check if it is correct"
+    );
+    println!(
+        "  • {} - {}",
+        style("benchmark").green().bold(),
+        "Benchmark a solution and get performance metrics"
+    );
+
+    println!("\n{}", style("Example Usage:").blue().bold());
+    println!("{}", style("─".repeat(60)).dim());
+    println!(
+        "  • {}",
+        style("tensara checker -p conv-1d -s solution.cu")
+            .yellow()
+            .bright()
+    );
+    println!(
+        "  • {}",
+        style("tensara benchmark -g A100 -p matrix-multiplication -s solution.py")
+            .yellow()
+            .bright()
+    );
+
+    println!(
+        "  • {}",
+        style("tensara benchmark -g A100 --problem matrix-vector --solution ./solution.py")
+            .yellow()
+            .bright()
+    );
+
+    println!("\n{}", style("For Help:").blue().bold());
+    println!("{}", style("─".repeat(60)).dim());
+    println!("  • {}", style("tensara --help").yellow());
+    println!("  • {}", style("tensara checker --help").yellow());
+    println!("  • {}", style("tensara benchmark --help").yellow());
+
+    println!("{}", style("═".repeat(60)).dim());
 }

@@ -27,7 +27,10 @@ impl Parameters {
             Some("benchmark") => {
                 Self::from_subcommand("benchmark", parser::get_benchmark_matches(&command_matches))
             }
-            _ => unreachable!("Subcommand is required by clap"),
+            _ => {
+                pretty::print_welcome_message();
+                std::process::exit(0);
+            }
         }
     }
 
