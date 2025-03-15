@@ -459,12 +459,24 @@ pub fn pretty_print_benchmark_response(mut response: impl Read) {
                                     let bar_length =
                                         ((gflops / max_gflops) * graph_width as f64) as usize;
 
-                                    let label = format!("{:<15} ({:.2})", name, gflops);
+                                    let max_digits = benchmark_results
+                                        .iter()
+                                        .filter_map(|r| r["gflops"].as_f64())
+                                        .map(|g| format!("{:.2}", g).len())
+                                        .max()
+                                        .unwrap_or(7);
+
+                                    let label = format!(
+                                        "{:<15} ({:.<width$.2}) ",
+                                        name,
+                                        gflops,
+                                        width = max_digits
+                                    );
 
                                     let bar = "█".repeat(bar_length);
                                     let styled_bar = style(bar).green();
 
-                                    println!("{:<12} {}", label, styled_bar);
+                                    println!("{:<15} {}", label, styled_bar);
                                 }
                             }
 
