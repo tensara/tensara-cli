@@ -5,25 +5,25 @@ Currently in beta. If you would like to test it, go to modal.com and spin up an 
 ## Usage (for development)
 
 ```bash
-cargo run -- (checker | benchmark) --problem <problem_name> --solution <solution_file> --gpu <gpu_type>
+cargo run -- (checker | benchmark) -g <gpu_type> --problem <problem_name> --solution <solution_file> 
 ```
 
 ## Usage (for production)
 
 ```bash
-tensara (checker | benchmark) --problem <problem_name> --solution <solution_file> --gpu <gpu_type>
+tensara (checker | benchmark) -g <gpu_type> --problem <problem_name> --solution <solution_file>
 ```
 
 ## Example
 
 ```bash
-tensara checker --problem vector-addition --solution tests/sol.cu --gpu T4
+tensara checker -g T4 --problem vector-addition --solution tests/sol.cu
 ```
 
 Short forms for args are also supported:
 
 ```bash
-tensara checker -p vector-addition -s tests/sol.cu -g T4
+tensara checker -g T4 -p vector-addition -s tests/sol.cu 
 ```
 
 Supports the same languages and GPUS as the Tensara engine.
