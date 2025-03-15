@@ -148,6 +148,7 @@ pub fn pretty_print_checker_streaming_response(mut response: impl Read) {
                             let passed = json["passed"].as_bool().unwrap_or(false);
                             let passed_tests = json["passed_tests"].as_u64().unwrap_or(0);
                             let total = json["total_tests"].as_u64().unwrap_or(0);
+                            let early_exit = json["early_exit"].as_bool().unwrap_or(false);
 
                             multi_progress.clear().unwrap();
                             std::thread::sleep(Duration::from_millis(500));
@@ -155,7 +156,7 @@ pub fn pretty_print_checker_streaming_response(mut response: impl Read) {
                             let header = if passed {
                                 style("✨ ALL TESTS PASSED! ✨").green().bold()
                             } else {
-                                style("⚠️ SOME TESTS FAILED ⚠️").red().bold()
+                                style("⚠️ TESTS FAILED ⚠️").red().bold()
                             };
 
                             println!("{}", header);
@@ -163,18 +164,61 @@ pub fn pretty_print_checker_streaming_response(mut response: impl Read) {
                             println!("Tests: {}/{} passed", passed_tests, total);
                             println!("{}", style("═".repeat(50)).dim());
 
+                            if early_exit {
+                                let reason = json["reason"].as_str().unwrap_or("Unknown reason");
+                                println!("\n{}", style("Testing stopped early:").yellow().bold());
+                                println!("{}", reason);
+                            }
+                            println!("{}", style("═".repeat(50)).dim());
+
                             println!("\n{}", style("Test Results:").bold().underlined());
-                            for (i, result) in test_results.iter().enumerate() {
-                                let test_name = result["name"].as_str().unwrap_or("Unknown test");
-                                let status = result["status"].as_str().unwrap_or("UNKNOWN");
+                            if let Some(results) = json["test_results"].as_array() {
+                                for (_, result) in results.iter().enumerate() {
+                                    let test_id = result["test_id"].as_u64().unwrap_or(0);
+                                    let test_name =
+                                        result["name"].as_str().unwrap_or("Unknown test");
+                                    let status = result["status"].as_str().unwrap_or("UNKNOWN");
 
-                                let status_style = if status == "PASSED" {
-                                    style(status).green().bold()
-                                } else {
-                                    style(status).red().bold()
-                                };
+                                    let status_style = if status == "PASSED" {
+                                        style(status).green().bold()
+                                    } else {
+                                        style(status).red().bold()
+                                    };
 
-                                println!("{}. {} - {}", i + 1, test_name, status_style);
+                                    println!("{}. {} - {}", test_id, test_name, status_style);
+
+                                    if status == "FAILED" {
+                                        if let Some(debug_info) = result["debug_info"].as_object() {
+                                            println!("   {}", style("Debug info:").yellow());
+                                            for (key, value) in debug_info {
+                                                let formatted_value = if value.is_f64() {
+                                                    format!("{:.6}", value.as_f64().unwrap())
+                                                } else {
+                                                    value.to_string()
+                                                };
+                                                println!(
+                                                    "   - {}: {}",
+                                                    style(key).cyan(),
+                                                    formatted_value
+                                                );
+                                            }
+                                        }
+                                    }
+                                }
+                            } else {
+                                for (i, result) in test_results.iter().enumerate() {
+                                    let test_name =
+                                        result["name"].as_str().unwrap_or("Unknown test");
+                                    let status = result["status"].as_str().unwrap_or("UNKNOWN");
+
+                                    let status_style = if status == "PASSED" {
+                                        style(status).green().bold()
+                                    } else {
+                                        style(status).red().bold()
+                                    };
+
+                                    println!("{}. {} - {}", i + 1, test_name, status_style);
+                                }
                             }
 
                             println!("\n{}", style("═".repeat(50)).dim());
@@ -280,6 +324,10 @@ pub fn pretty_print_benchmark_response(mut response: impl Read) {
                             );
 
                             return;
+                        }
+                        Some("sanity_check") => {
+                            compilation_pb.set_message("Sanity check passed!".to_string());
+                            compilation_pb.set_prefix("✅");
                         }
                         Some("running") => {
                             compilation_pb

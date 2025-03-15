@@ -1,3 +1,5 @@
+use std::io::Read;
+
 use dotenv::dotenv;
 use tensara::{client, pretty, Parameters};
 
@@ -12,7 +14,7 @@ fn main() {
     let endpoint = format!("{}/{}-{}", binding, command_type, gpu);
     let endpoint = endpoint.as_str();
 
-    let response = client::send_post_request(
+    let mut response = client::send_post_request(
         endpoint,
         &parameters.get_solution_code(),
         &parameters.get_problem(),
@@ -23,4 +25,8 @@ fn main() {
         "checker" => pretty::pretty_print_checker_streaming_response(response),
         _ => unreachable!("Invalid command type"),
     }
+
+    // let mut response_string = String::new();
+    // response.read_to_string(&mut response_string).unwrap();
+    // println!("{}", response_string);
 }
