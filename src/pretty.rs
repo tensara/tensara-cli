@@ -359,8 +359,8 @@ pub fn pretty_print_benchmark_response(mut response: impl Read) {
 
                             println!("\n{}", style("Detailed Results:").bold().underlined());
                             println!(
-                                "{:<5} {:>15} {:>15} {:>15}",
-                                style("#").bold(),
+                                "{:<18} {:>15} {:>15} {:>15}",
+                                style("Test Case").bold(),
                                 style("GFLOPS").bold(),
                                 style("Runtime (ms)").bold(),
                                 style("Std Dev GFLOPS").bold()
