@@ -41,21 +41,6 @@ jobs:
           # This is passed in at compile time from github secrets, NOT ENV
           MODAL_SLUG: ${{ secrets.MODAL_SLUG }}
       
-      - name: Install additional tools
-        if: matrix.os == 'ubuntu-latest'
-        run: sudo apt-get install -y upx
-      
-      - name: Install additional tools (macOS)
-        if: matrix.os == 'macos-latest'
-        run: brew install upx
-      
-      - name: Compress binaries (Linux/macOS)
-        if: matrix.os != 'windows-latest'
-        run: |
-          if command -v upx &> /dev/null; then
-            upx --best --lzma target/release/${{ matrix.artifact_name }}
-          fi
-      
       - name: Rename binary for consistent naming
         run: |
           if [ "${{ matrix.os }}" == "windows-latest" ]; then
