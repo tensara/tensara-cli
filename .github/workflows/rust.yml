@@ -1,8 +1,7 @@
 name: Build and Release
 on:
   push:
-    branches:
-      - '**'
+    # Only trigger on tags starting with 'v'
     tags:
       - "v*"
 jobs:
