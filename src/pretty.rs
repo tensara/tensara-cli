@@ -495,3 +495,177 @@ pub fn pretty_print_benchmark_response(mut response: impl Read) {
         }
     }
 }
+
+pub fn print_parse_error(error: &clap::Error) {
+    match error.kind() {
+        clap::error::ErrorKind::InvalidValue => {
+            let error_message = error.to_string();
+
+            if error_message.contains("PROBLEM_NAME") {
+                print_invalid_problem_error(&error_message);
+            } else if error_message.contains("GPU_TYPE") {
+                print_invalid_gpu_error(&error_message);
+            } else if error_message.contains("SOLUTION_FILE") {
+                print_invalid_file_error();
+            } else {
+                print_generic_error(&error_message);
+            }
+        }
+        clap::error::ErrorKind::MissingRequiredArgument => {
+            print_missing_arg_error(&error.to_string());
+        }
+        _ => {
+            print_generic_error(&error.to_string());
+        }
+    }
+}
+
+fn print_invalid_problem_error(error_message: &str) {
+    let problem_value = extract_value_from_error(error_message);
+    println!("\n{}", style("⚠️ INVALID PROBLEM NAME ⚠️").red().bold());
+
+    if let Some(value) = problem_value {
+        println!(
+            "\n{}: '{}'",
+            style("Invalid problem name").yellow().bold(),
+            value
+        );
+    }
+
+    println!("\n{}", style("Available problem names:").green().bold());
+    println!("{}", style("─".repeat(60)).dim());
+
+    let problems = [
+        ("conv-1d", "1D Convolution"),
+        ("conv-2d", "2D Convolution"),
+        ("gemm-relu", "General Matrix Multiply with ReLU"),
+        ("leaky-relu", "Leaky ReLU Activation"),
+        ("matrix-multiplication", "Matrix Multiplication"),
+        ("matrix-vector", "Matrix-Vector Multiplication"),
+        ("relu", "ReLU Activation"),
+        ("square-matmul", "Square Matrix Multiplication"),
+        ("vector-addition", "Vector Addition"),
+    ];
+
+    for (name, desc) in problems {
+        println!("  • {} - {}", style(name).cyan().bold(), desc);
+    }
+
+    println!(
+        "\n{}",
+        style("See https://tensara.org/problems for details").yellow()
+    );
+    println!("{}", style("═".repeat(60)).dim());
+}
+
+fn print_invalid_gpu_error(error_message: &str) {
+    let gpu_value = extract_value_from_error(error_message);
+
+    println!("\n{}", style("⚠️ INVALID GPU TYPE ⚠️").red().bold());
+    println!("{}", style("═".repeat(50)).dim());
+
+    if let Some(value) = gpu_value {
+        println!(
+            "\n{}: '{}'",
+            style("Invalid GPU type").yellow().bold(),
+            value
+        );
+    }
+
+    println!("\n{}", style("Supported GPU types:").green().bold());
+    println!("{}", style("─".repeat(50)).dim());
+
+    let gpus = [
+        ("T4", "NVIDIA Tesla T4"),
+        ("A100", "NVIDIA A100"),
+        ("A100_80GB", "NVIDIA A100 80GB"),
+        ("H100", "NVIDIA H100"),
+        ("L4", "NVIDIA L4"),
+        ("L40s", "NVIDIA L40S"),
+    ];
+
+    for (name, desc) in gpus {
+        println!("  • {} - {}", style(name).cyan().bold(), desc);
+    }
+
+    println!("{}", style("═".repeat(50)).dim());
+}
+
+fn print_invalid_file_error() {
+    println!("\n{}", style("⚠️ INVALID SOLUTION FILE ⚠️").red().bold());
+    println!("{}", style("═".repeat(60)).dim());
+
+    println!("\n{}", style("Requirements:").green().bold());
+    println!("{}", style("─".repeat(60)).dim());
+    println!("  • File must exist");
+    println!("  • File must be either a .cu (CUDA) or .py (Python) file");
+    println!("  • File must be readable");
+
+    println!("\n{}", style("Example:").yellow().bold());
+    println!("  tensara checker -p relu -s ./my_solution.cu");
+
+    println!("{}", style("═".repeat(60)).dim());
+}
+
+fn print_missing_arg_error(error_message: &str) {
+    println!(
+        "\n{}",
+        style("⚠️ MISSING REQUIRED ARGUMENT ⚠️").red().bold()
+    );
+    println!("{}", style("═".repeat(60)).dim());
+    println!("{}", style(error_message).red());
+
+    println!("\n{}", style("Usage examples:").green().bold());
+    println!("{}", style("─".repeat(60)).dim());
+    println!(
+        "  • {}",
+        style("tensara checker -p relu -s ./solution.cu").cyan()
+    );
+    println!(
+        "  • {}",
+        style("tensara benchmark -p matrix-vector -s ./solution.py").cyan()
+    );
+
+    println!(
+        "\n{}",
+        style("Run with --help for more information:").yellow()
+    );
+    println!("  • {}", style("tensara --help").cyan());
+    println!("  • {}", style("tensara checker --help").cyan());
+    println!("  • {}", style("tensara benchmark --help").cyan());
+
+    println!("{}", style("═".repeat(60)).dim());
+}
+
+fn print_generic_error(error_message: &str) {
+    println!("\n{}", style("⚠️ COMMAND ERROR ⚠️").red().bold());
+    println!("{}", error_message);
+
+    println!(
+        "\n{}",
+        style("Try running with --help for more information").yellow()
+    );
+    println!("{}", style("═".repeat(60)).dim());
+}
+
+pub fn print_file_error(file_path: &str, error_message: &str) {
+    println!("\n{}", style("⚠️ FILE ERROR ⚠️").red().bold());
+    println!("{}", style("═".repeat(60)).dim());
+    println!("{}: {}", style("Error").red().bold(), error_message);
+    println!("{}: {}", style("File").yellow().bold(), file_path);
+
+    println!("\n{}", style("Make sure:").green().bold());
+    println!("  • The file exists");
+    println!("  • You have permission to read the file");
+    println!("  • The file path is correct");
+
+    println!("{}", style("═".repeat(60)).dim());
+}
+
+fn extract_value_from_error(error_message: &str) -> Option<String> {
+    let parts: Vec<&str> = error_message.split(':').collect();
+    if parts.len() >= 3 {
+        return Some(parts[2].trim().to_string());
+    }
+    None
+}

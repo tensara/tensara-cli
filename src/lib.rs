@@ -12,7 +12,14 @@ pub struct Parameters {
 
 impl Parameters {
     pub fn new() -> Self {
-        let command_matches = parser::get_matches();
+        let command_matches = match parser::parse_args(None) {
+            Ok(matches) => matches,
+            Err(e) => {
+                pretty::print_parse_error(&e);
+                std::process::exit(1);
+            }
+        };
+
         match command_matches.subcommand_name() {
             Some("checker") => {
                 Self::from_subcommand("checker", parser::get_checker_matches(&command_matches))
