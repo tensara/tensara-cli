@@ -357,7 +357,7 @@ pub fn pretty_print_benchmark_response(mut response: impl Read) {
                             println!("{:<25} {:>15.2} ms", "Average Runtime:", avg_runtime);
                             println!("{}", style("═".repeat(65)).dim());
 
-                            println!("\n{}", style("Detailed Results:").bold().underlined());
+                            println!("\n{}", style("Detailed Results:\n").bold().underlined());
                             println!(
                                 "{:<18} {:>15} {:>15} {:>15}",
                                 style("Test Case").bold(),
