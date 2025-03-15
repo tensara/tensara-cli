@@ -8,6 +8,7 @@ on:
 # Add permissions needed for creating releases
 permissions:
   contents: write
+  packages: write
 
 jobs:
   build:
