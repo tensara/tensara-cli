@@ -2,6 +2,7 @@ use clap::{builder::TypedValueParser, command, Arg, ArgMatches, Command};
 use std::ffi::OsStr;
 use std::path::Path;
 
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ProblemNames {
     Conv1d,
@@ -152,6 +153,11 @@ impl TypedValueParser for SolutionFile {
                     clap::error::ErrorKind::InvalidValue,
                     format!("SOLUTION_FILE: {}", path_str),
                 ));
+            } else if ext_str == "py" {
+                return Err(clap::Error::raw(
+                    clap::error::ErrorKind::InvalidValue,
+                    format!("NOT_SUPPORTED: {}", path_str),
+                ));
             }
         } else {
             return Err(clap::Error::raw(
@@ -173,6 +179,7 @@ pub fn parse_args(args: Option<Vec<&str>>) -> Result<ArgMatches, clap::Error> {
             .subcommand(
                 Command::new("checker")
                     .about("Submit a solution to a problem and check if it is correct")
+                    .arg_required_else_help(true)
                     .arg(
                         Arg::new("gpu_type")
                             .short('g')
@@ -204,6 +211,7 @@ pub fn parse_args(args: Option<Vec<&str>>) -> Result<ArgMatches, clap::Error> {
             .subcommand(
                 Command::new("benchmark")
                     .about("Benchmark a solution and get the performance metrics for a given problem")
+                    .arg_required_else_help(true)
                     .arg(
                         Arg::new("gpu_type")
                             .value_name("GPU_TYPE")

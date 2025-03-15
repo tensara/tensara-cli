@@ -1,15 +1,19 @@
 use dotenv::dotenv;
 use tensara::{client, pretty, Parameters};
 
+const COMPILED_MODAL_SLUG: &str = env!("COMPILED_MODAL_SLUG");
+
 fn main() {
+    #[cfg(debug_assertions)]
     dotenv().ok();
 
     let parameters = Parameters::new();
     let command_type = parameters.get_command_name();
     let gpu = parameters.get_gpu();
 
-    let binding = std::env::var("MODAL_SLUG").unwrap();
-    let endpoint = format!("{}/{}-{}", binding, command_type, gpu);
+    let modal_slug =
+        std::env::var("MODAL_SLUG").unwrap_or_else(|_| COMPILED_MODAL_SLUG.to_string());
+    let endpoint = format!("{}/{}-{}", modal_slug, command_type, gpu);
     let endpoint = endpoint.as_str();
 
     let response = client::send_post_request(

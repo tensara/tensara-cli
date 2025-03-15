@@ -2,6 +2,7 @@
 name = "tensara"
 version = "0.1.0"
 edition = "2021"
+build = "build.rs"
 
 [dependencies]
 clap = { version = "4.5.32", features = ["cargo"] }

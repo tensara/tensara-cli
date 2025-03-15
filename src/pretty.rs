@@ -507,12 +507,17 @@ pub fn print_parse_error(error: &clap::Error) {
                 print_invalid_gpu_error(&error_message);
             } else if error_message.contains("SOLUTION_FILE") {
                 print_invalid_file_error();
+            } else if error_message.contains("NOT_SUPPORTED") {
+                print_unsupported_file_error();
             } else {
                 print_generic_error(&error_message);
             }
         }
         clap::error::ErrorKind::MissingRequiredArgument => {
             print_missing_arg_error(&error.to_string());
+        }
+        clap::error::ErrorKind::DisplayHelp => {
+            print_help(&error.to_string());
         }
         _ => {
             print_generic_error(&error.to_string());
@@ -723,5 +728,22 @@ pub fn print_welcome_message() {
     println!("  • {}", style("tensara checker --help").yellow());
     println!("  • {}", style("tensara benchmark --help").yellow());
 
+    println!("{}", style("═".repeat(60)).dim());
+}
+
+fn print_help(error_message: &str) {
+    println!("{}", style("═".repeat(60)).dim());
+    println!("{}", error_message);
+    println!("{}", style("═".repeat(60)).dim());
+}
+
+fn print_unsupported_file_error() {
+    println!("{}", style("═".repeat(60)).dim());
+    println!(
+        "{}",
+        style("We are actively working on enabling Triton support! Please check tensara.org for updates.")
+            .green()
+            .bold()
+    );
     println!("{}", style("═".repeat(60)).dim());
 }

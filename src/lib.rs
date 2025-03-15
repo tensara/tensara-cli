@@ -1,6 +1,7 @@
 pub mod client;
 pub mod parser;
 pub mod pretty;
+
 use clap::ArgMatches;
 
 pub struct Parameters {
@@ -14,10 +15,16 @@ impl Parameters {
     pub fn new() -> Self {
         let command_matches = match parser::parse_args(None) {
             Ok(matches) => matches,
-            Err(e) => {
-                pretty::print_parse_error(&e);
-                std::process::exit(1);
-            }
+            Err(e) => match e.kind() {
+                clap::error::ErrorKind::DisplayHelp => {
+                    println!("{}", e.to_string());
+                    std::process::exit(0);
+                }
+                _ => {
+                    pretty::print_parse_error(&e);
+                    std::process::exit(1);
+                }
+            },
         };
 
         match command_matches.subcommand_name() {
