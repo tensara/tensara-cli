@@ -1,0 +1,76 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build:
+    name: Build ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            artifact_name: tensara
+            asset_name: tensara-linux-amd64
+          - os: windows-latest
+            artifact_name: tensara.exe
+            asset_name: tensara-windows-amd64.exe
+          - os: macos-latest
+            artifact_name: tensara
+            asset_name: tensara-macos-amd64
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      
+      - name: Build binary
+        uses: actions-rs/cargo@v1
+        with:
+          command: build
+          args: --release
+        env:
+          # This is passed in at compile time from github secrets, NOT ENV
+          MODAL_SLUG: ${{ secrets.MODAL_SLUG }}
+      
+      - name: Install additional tools
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get install -y upx
+      
+      - name: Install additional tools (macOS)
+        if: matrix.os == 'macos-latest'
+        run: brew install upx
+      
+      - name: Compress binaries (Linux/macOS)
+        if: matrix.os != 'windows-latest'
+        run: |
+          if command -v upx &> /dev/null; then
+            upx --best --lzma target/release/${{ matrix.artifact_name }}
+          fi
+      
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: target/release/${{ matrix.artifact_name }}
+          name: Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Upload release asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: target/release/${{ matrix.artifact_name }}
+          asset_name: ${{ matrix.asset_name }}
+          asset_content_type: application/octet-stream
