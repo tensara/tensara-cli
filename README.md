@@ -13,8 +13,19 @@ For Windows (untested):
 iwr -useb https://tensara.github.io/tensara-cli/install.ps1 | iex
 ```
 
+
 ## Usage
 
+Run:
+``` bash
+tensara
+```
+or 
+``` bash
+tensara --help
+```
+
+For runnning tests or benchmarking:
 ```bash
 tensara (checker | benchmark) -g <gpu_type> --problem <problem_name> --solution <solution_file>
 ```
@@ -33,5 +44,8 @@ tensara checker -g T4 -p vector-addition -s tests/sol.cu
 
 Supports the same languages and GPUS as the Tensara engine.
 
-
-You can see this Loom video for a run of the checker and benchmark: [Demo](https://www.loom.com/share/72feb4242b504039b434fefa1b8b8d1e?sid=96e1dbf7-ac91-4ee2-9c93-9cbd664c9e92)
+## Uninstall
+Remove the binary
+```bash
+sudo rm /usr/local/bin/tensara
+```
