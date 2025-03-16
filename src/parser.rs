@@ -214,6 +214,7 @@ pub fn parse_args(args: Option<Vec<&str>>) -> Result<ArgMatches, clap::Error> {
                     .arg_required_else_help(true)
                     .arg(
                         Arg::new("gpu_type")
+                            .short('g')
                             .value_name("GPU_TYPE")
                             .help("Type of the GPU to use")
                             .default_value("T4")
