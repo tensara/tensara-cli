@@ -2,13 +2,18 @@
 
 Currently in beta. If you would like to test it, go to modal.com and spin up an endpoint using the cli-engine repository. Put that endpoint in a .env file (see example) and you should be able to run the checker and benchmark
 
-## Usage (for development)
-
+## Install
+For Linux/Mac:
 ```bash
-cargo run -- (checker | benchmark) -g <gpu_type> --problem <problem_name> --solution <solution_file> 
+curl -sSL https://tensara.github.io/tensara-cli/install.sh | bash
 ```
 
-## Usage (for production)
+For Windows (untested):
+```bash
+iwr -useb https://tensara.github.io/tensara-cli/install.ps1 | iex
+```
+
+## Usage
 
 ```bash
 tensara (checker | benchmark) -g <gpu_type> --problem <problem_name> --solution <solution_file>
