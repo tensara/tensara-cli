@@ -25,7 +25,7 @@ or
 tensara --help
 ```
 
-For runnning tests or benchmarking:
+For running tests or benchmarking:
 ```bash
 tensara (checker | benchmark) -g <gpu_type> --problem <problem_name> --solution <solution_file>
 ```
