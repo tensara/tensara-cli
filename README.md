@@ -1,6 +1,6 @@
 # CLI for Tensara submissions (Beta)
 
-Currently in beta. If you would like to test it, go to modal.com and spin up an endpoint using the cli-engine repository. Put that endpoint in a .env file (see example) and you should be able to run the checker and benchmark
+Currently in beta. Allow users to submit solutions to problems from the comfort of their own IDE 
 
 ## Install
 For Linux/Mac:
