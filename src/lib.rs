@@ -20,6 +20,10 @@ impl Parameters {
                     println!("{}", e.to_string());
                     std::process::exit(0);
                 }
+                clap::error::ErrorKind::DisplayVersion => {
+                    println!("{}", e.to_string());
+                    std::process::exit(0);
+                }
                 _ => {
                     pretty::print_parse_error(&e);
                     std::process::exit(1);
