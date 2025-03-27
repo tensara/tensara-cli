@@ -25,7 +25,7 @@ detect_platform() {
 }
 
 download_binary() {
-  VERSION=${1:-"v0.1.0"}
+  VERSION=${1:-"v0.2.0"}
   
   if [[ "$OS" == "windows" ]]; then
     ASSET_NAME="tensara-${OS}-${ARCH}.exe"
