@@ -153,12 +153,7 @@ impl TypedValueParser for SolutionFile {
                     clap::error::ErrorKind::InvalidValue,
                     format!("SOLUTION_FILE: {}", path_str),
                 ));
-            } else if ext_str == "py" {
-                return Err(clap::Error::raw(
-                    clap::error::ErrorKind::InvalidValue,
-                    format!("NOT_SUPPORTED: {}", path_str),
-                ));
-            }
+            } 
         } else {
             return Err(clap::Error::raw(
                 clap::error::ErrorKind::InvalidValue,
@@ -266,4 +261,8 @@ pub fn get_checker_matches(matches: &ArgMatches) -> &ArgMatches {
 
 pub fn get_benchmark_matches(matches: &ArgMatches) -> &ArgMatches {
     matches.subcommand_matches("benchmark").unwrap()
+}
+
+pub fn get_language_type(matches: &ArgMatches) -> &String {
+    matches.get_one::<String>("language").unwrap()
 }

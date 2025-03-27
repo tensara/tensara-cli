@@ -5,11 +5,16 @@ pub mod pretty;
 
 use clap::ArgMatches;
 
+const COMPILED_PROBLEM_ENDPOINT: &str = env!("COMPILED_PROBLEM_URL");
+
 pub struct Parameters {
+    problem_def: String,
     problem: String,
     solution_code: String,
-    gpu: String,
+    dtype: String,
+    language: String,
     command_name: String,
+    gpu_type: String,
 }
 
 impl Parameters {
@@ -49,14 +54,30 @@ impl Parameters {
     fn from_subcommand(subcommand: &str, matches: &ArgMatches) -> Self {
         let problem = parser::get_problem_name(matches).to_string();
         let solution_file = parser::get_solution_file(matches);
-        let gpu = parser::get_gpu_type(matches).to_string();
+        let dtype = "float32".to_string();
+        let gpu_type = parser::get_gpu_type(matches).to_string();
+        let solution_file_extension = solution_file.split('.').last().unwrap();
+        let language = match solution_file_extension {
+            "py" => "python".to_string(),
+            "cu" => "cuda".to_string(),
+            _ => "unknown".to_string(),
+        };
+
         let command_name = subcommand.to_string();
 
+        let problem_endpoint = std::env::var("PROBLEM_ENDPOINT")
+            .unwrap_or_else(|_| COMPILED_PROBLEM_ENDPOINT.to_string());
+        let problem_endpoint = format!("{}/{}/def.py", problem_endpoint, problem);
+        let problem_def = client::get_problem_definition(&problem_endpoint);
+
         Self {
+            problem_def,
             problem,
             solution_code: Self::get_file_contents(solution_file),
-            gpu,
+            dtype,
+            language: language.to_string(),
             command_name,
+            gpu_type,
         }
     }
 
@@ -64,19 +85,30 @@ impl Parameters {
         std::fs::read_to_string(solution_file).unwrap()
     }
 
-    pub fn get_gpu(&self) -> &String {
-        &self.gpu
-    }
-
     pub fn get_command_name(&self) -> &String {
         &self.command_name
     }
 
-    pub fn get_problem(&self) -> &String {
-        &self.problem
+    pub fn get_problem_def(&self) -> &String {
+        &self.problem_def
     }
 
     pub fn get_solution_code(&self) -> &String {
         &self.solution_code
+    }
+    pub fn get_gpu_type(&self) -> &String {
+        &self.gpu_type
+    }
+
+    pub fn get_dtype(&self) -> &String {
+        &self.dtype
+    }
+
+    pub fn get_language(&self) -> &String {
+        &self.language
+    }
+
+    pub fn get_problem(&self) -> &String {
+        &self.problem
     }
 }

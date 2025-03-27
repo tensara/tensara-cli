@@ -34,4 +34,14 @@ fn main() {
             println!("cargo:rustc-env=COMPILED_GITHUB_CLIENT_SECRET=default-development-secret");
         }
     }
+
+    println!("cargo:rerun-if-env-changed=PROBLEM_ENDPOINT");
+    match std::env::var("PROBLEM_ENDPOINT") {
+        Ok(problem_endpoint) => {
+            println!("cargo:rustc-env=COMPILED_PROBLEM_URL={}", problem_endpoint);
+        }
+        Err(_) => {
+            println!("cargo:rustc-env=COMPILED_PROBLEM_URL=default-development-endpoint");
+        }
+    }
 }

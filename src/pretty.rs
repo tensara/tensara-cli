@@ -6,42 +6,34 @@ use std::time::Duration;
 
 pub fn pretty_print_checker_streaming_response(mut response: impl Read) {
     let multi_progress = MultiProgress::new();
-
     let spinner_style = ProgressStyle::default_spinner()
         .template("{spinner:.green} {prefix:.bold.dim} {wide_msg}")
         .unwrap()
         .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏");
-
     let progress_style = ProgressStyle::default_bar()
         .template("{prefix:.bold.white} [{bar:40.green/blue}] {pos}/{len} {msg}")
         .unwrap()
         .progress_chars("█▓▒░  ");
-
     let mut compilation_pb = multi_progress.add(ProgressBar::new_spinner());
     compilation_pb.set_style(spinner_style.clone());
     compilation_pb.set_prefix("🔧");
     compilation_pb.enable_steady_tick(Duration::from_millis(80));
-
-    let mut _total_tests = 0;
+    let mut total_tests = 0;
     let mut completed_tests = 0;
     let mut test_progress: Option<ProgressBar> = None;
     let mut test_results: Vec<Value> = Vec::new();
     let mut buffer = [0; 1024];
     let mut data_buffer = String::new();
-
     while let Ok(size) = response.read(&mut buffer) {
         if size == 0 {
             break;
         }
-
         let chunk = String::from_utf8_lossy(&buffer[0..size]);
         data_buffer.push_str(&chunk);
-
         while let Some(pos) = data_buffer.find('\n') {
             let line = data_buffer[..pos].trim().to_string();
             let remaining = data_buffer[pos + 1..].to_string();
             data_buffer = remaining;
-
             if line.starts_with("data: ") {
                 let json_str = &line["data: ".len()..];
                 if let Ok(json) = serde_json::from_str::<Value>(json_str) {
@@ -52,20 +44,15 @@ pub fn pretty_print_checker_streaming_response(mut response: impl Read) {
                         Some("error") => {
                             compilation_pb.finish_with_message("Error detected!".to_string());
                             compilation_pb.set_prefix("❌");
-
                             compilation_pb.finish_and_clear();
                             multi_progress.clear().unwrap();
-
                             println!("\n{}", style("⚠️ ERROR OCCURRED ⚠️").red().bold());
                             println!("{}", style("═".repeat(50)).dim());
-
                             let error_message = json["error"].as_str().unwrap_or("Unknown error");
                             println!("{}: {}", style("Error").red().bold(), error_message);
-
                             if let Some(details) = json["details"].as_str() {
                                 println!("\n{}", style("Details:").yellow().bold());
                                 println!("{}", style("─".repeat(50)).dim());
-
                                 let formatted_details = details
                                     .lines()
                                     .map(|line| {
@@ -81,10 +68,8 @@ pub fn pretty_print_checker_streaming_response(mut response: impl Read) {
                                     })
                                     .collect::<Vec<String>>()
                                     .join("\n");
-
                                 println!("{}", formatted_details);
                             }
-
                             println!("{}", style("═".repeat(50)).dim());
                             println!(
                                 "{}",
@@ -92,43 +77,35 @@ pub fn pretty_print_checker_streaming_response(mut response: impl Read) {
                                     .yellow()
                                     .bold()
                             );
-
                             return;
                         }
                         Some("running") => {
                             compilation_pb
                                 .finish_with_message("Compilation successful!".to_string());
                             compilation_pb.set_prefix("✅");
-
                             let running_pb = multi_progress.add(ProgressBar::new_spinner());
                             running_pb.set_style(spinner_style.clone());
                             running_pb.set_prefix("🚀");
                             running_pb.set_message("Running tests...".to_string());
                             running_pb.enable_steady_tick(Duration::from_millis(80));
-
                             compilation_pb = running_pb;
                         }
                         Some("test_result") => {
                             if test_progress.is_none() && json["totalTests"].is_number() {
-                                _total_tests = json["totalTests"].as_u64().unwrap_or(0) as usize;
-
+                                total_tests = json["totalTests"].as_u64().unwrap_or(0) as usize;
                                 if compilation_pb.is_finished() {
                                     compilation_pb.finish();
                                 }
-
                                 let progress =
-                                    multi_progress.add(ProgressBar::new(_total_tests as u64));
+                                    multi_progress.add(ProgressBar::new(total_tests as u64));
                                 progress.set_style(progress_style.clone());
                                 progress.set_prefix("🧪 Tests");
                                 test_progress = Some(progress);
                             }
-
                             if let Some(result) = json["result"].as_object() {
                                 let test_name = result["name"].as_str().unwrap_or("Unknown test");
                                 let status = result["status"].as_str().unwrap_or("UNKNOWN");
-
                                 test_results.push(json["result"].clone());
-
                                 completed_tests += 1;
                                 if let Some(ref progress) = test_progress {
                                     let status_symbol =
@@ -144,33 +121,26 @@ pub fn pretty_print_checker_streaming_response(mut response: impl Read) {
                                 progress.finish_and_clear();
                             }
                             compilation_pb.finish_and_clear();
-
                             let passed = json["passed"].as_bool().unwrap_or(false);
                             let passed_tests = json["passed_tests"].as_u64().unwrap_or(0);
                             let total = json["total_tests"].as_u64().unwrap_or(0);
                             let early_exit = json["early_exit"].as_bool().unwrap_or(false);
-
                             multi_progress.clear().unwrap();
                             std::thread::sleep(Duration::from_millis(500));
-
                             let header = if passed {
                                 style("✨ ALL TESTS PASSED! ✨").green().bold()
                             } else {
                                 style("⚠️ TESTS FAILED ⚠️").red().bold()
                             };
-
                             println!("{}", header);
-                            println!("{}", style("═".repeat(50)).dim());
+                            println!("{}", style("═".repeat(65)).dim());
                             println!("Tests: {}/{} passed", passed_tests, total);
-                            println!("{}", style("═".repeat(50)).dim());
-
+                            println!("{}", style("═".repeat(65)).dim());
                             if early_exit {
                                 let reason = json["reason"].as_str().unwrap_or("Unknown reason");
                                 println!("\n{}", style("Testing stopped early:").yellow().bold());
                                 println!("{}", reason);
                             }
-                            println!("{}", style("═".repeat(50)).dim());
-
                             println!("\n{}", style("Test Results:").bold().underlined());
                             if let Some(results) = json["test_results"].as_array() {
                                 for (_, result) in results.iter().enumerate() {
@@ -178,30 +148,109 @@ pub fn pretty_print_checker_streaming_response(mut response: impl Read) {
                                     let test_name =
                                         result["name"].as_str().unwrap_or("Unknown test");
                                     let status = result["status"].as_str().unwrap_or("UNKNOWN");
-
                                     let status_style = if status == "PASSED" {
                                         style(status).green().bold()
                                     } else {
                                         style(status).red().bold()
                                     };
-
                                     println!("{}. {} - {}", test_id, test_name, status_style);
-
                                     if status == "FAILED" {
                                         if let Some(debug_info) = result["debug_info"].as_object() {
-                                            println!("   {}", style("Debug info:").yellow());
-                                            for (key, value) in debug_info {
-                                                let formatted_value = if value.is_f64() {
-                                                    format!("{:.6}", value.as_f64().unwrap())
-                                                } else {
-                                                    value.to_string()
-                                                };
-                                                println!(
-                                                    "   - {}: {}",
-                                                    style(key).cyan(),
-                                                    formatted_value
-                                                );
+                                            println!(
+                                                "   {}",
+                                                style("Error Details:").yellow().bold()
+                                            );
+
+                                            // Check if there's a message field and display it prominently
+                                            if let Some(message) = debug_info.get("message") {
+                                                if let Some(msg_str) = message.as_str() {
+                                                    println!(
+                                                        "   {} {}",
+                                                        style("→").yellow(),
+                                                        style(msg_str).red()
+                                                    );
+                                                    println!();
+                                                }
                                             }
+
+                                            // Display numerical difference metrics with proper formatting
+                                            let metrics = [
+                                                ("max_difference", "Maximum Difference"),
+                                                ("mean_difference", "Mean Difference"),
+                                            ];
+
+                                            for (key, display_name) in metrics.iter() {
+                                                if let Some(value) = debug_info.get(*key) {
+                                                    if value.is_f64() {
+                                                        let val = value.as_f64().unwrap();
+                                                        let formatted_val = format!("{:.6e}", val);
+                                                        println!(
+                                                            "   {} {}: {}",
+                                                            style("■").cyan(),
+                                                            style(*display_name).cyan(),
+                                                            formatted_val
+                                                        );
+                                                    }
+                                                }
+                                            }
+
+                                            // Handle sample differences in a more compact format
+                                            if let Some(sample_diffs) =
+                                                debug_info.get("sample_differences")
+                                            {
+                                                if let Some(diffs_array) = sample_diffs.as_array() {
+                                                    if !diffs_array.is_empty() {
+                                                        println!(
+                                                            "   {} {}:",
+                                                            style("■").cyan(),
+                                                            style("Sample Differences").cyan()
+                                                        );
+
+                                                        // Only show up to 5 differences to avoid flooding the console
+                                                        let max_samples = 5.min(diffs_array.len());
+                                                        for i in 0..max_samples {
+                                                            if let Some(diff) =
+                                                                diffs_array[i].as_f64()
+                                                            {
+                                                                println!(
+                                                                    "     - Sample {}: {:.6e}",
+                                                                    i + 1,
+                                                                    diff
+                                                                );
+                                                            }
+                                                        }
+
+                                                        if diffs_array.len() > max_samples {
+                                                            println!(
+                                                                "     - {} more differences...",
+                                                                diffs_array.len() - max_samples
+                                                            );
+                                                        }
+                                                    }
+                                                }
+                                            }
+
+                                            // Display any other fields that might be present
+                                            for (key, value) in debug_info {
+                                                if key != "message"
+                                                    && key != "max_difference"
+                                                    && key != "mean_difference"
+                                                    && key != "sample_differences"
+                                                {
+                                                    let formatted_value = if value.is_f64() {
+                                                        format!("{:.6}", value.as_f64().unwrap())
+                                                    } else {
+                                                        value.to_string().replace("\"", "")
+                                                    };
+                                                    println!(
+                                                        "   {} {}: {}",
+                                                        style("■").cyan(),
+                                                        style(key).cyan(),
+                                                        formatted_value
+                                                    );
+                                                }
+                                            }
+                                            println!();
                                         }
                                     }
                                 }
@@ -210,21 +259,19 @@ pub fn pretty_print_checker_streaming_response(mut response: impl Read) {
                                     let test_name =
                                         result["name"].as_str().unwrap_or("Unknown test");
                                     let status = result["status"].as_str().unwrap_or("UNKNOWN");
-
                                     let status_style = if status == "PASSED" {
                                         style(status).green().bold()
                                     } else {
                                         style(status).red().bold()
                                     };
-
                                     println!("{}. {} - {}", i + 1, test_name, status_style);
                                 }
                             }
-
-                            println!("\n{}", style("═".repeat(50)).dim());
+                            println!("\n{}", style("═".repeat(65)).dim());
                         }
                         _ => {
-                            println!("{}", line);
+                            // Uncomment for debugging
+                            // println!("{}", line);
                         }
                     }
                 }
@@ -342,7 +389,7 @@ pub fn pretty_print_benchmark_response(mut response: impl Read) {
 
                             compilation_pb = running_pb;
                         }
-                        Some("benchmark_result") => {
+                        Some("test_result") => {
                             if benchmark_progress.is_none() && json["totalTests"].is_number() {
                                 _total_benchmarks =
                                     json["totalTests"].as_u64().unwrap_or(0) as usize;
@@ -358,9 +405,10 @@ pub fn pretty_print_benchmark_response(mut response: impl Read) {
                                 benchmark_progress = Some(progress);
                             }
 
-                            let name = json["name"].as_str().unwrap_or("Benchmark");
-                            benchmark_names.push(name.to_string());
-                            if let Some(result) = json["result"].as_object() {
+                            if let Some(result) = &json["result"].as_object() {
+                                let test_name = result["name"].as_str().unwrap_or("Benchmark");
+                                benchmark_names.push(test_name.to_string());
+
                                 let gflops = result["gflops"].as_f64().unwrap_or(0.0);
                                 let runtime = result["runtime_ms"].as_f64().unwrap_or(0.0);
                                 let status = result["status"].as_str().unwrap_or("UNKNOWN");
@@ -388,7 +436,8 @@ pub fn pretty_print_benchmark_response(mut response: impl Read) {
                             multi_progress.clear().unwrap();
                             std::thread::sleep(Duration::from_millis(500));
 
-                            let avg_gflops = json["gflops"].as_f64().unwrap_or(0.0);
+                            // Get values from the updated JSON format
+                            let avg_gflops = json["average_gflops"].as_f64().unwrap_or(0.0);
                             let avg_runtime = json["runtime_ms"].as_f64().unwrap_or(0.0);
                             let total = json["total_tests"].as_u64().unwrap_or(0);
 
@@ -411,14 +460,13 @@ pub fn pretty_print_benchmark_response(mut response: impl Read) {
                                 style("Test Case").bold(),
                                 style("GFLOPS").bold(),
                                 style("Runtime (ms)").bold(),
-                                style("Std Dev GFLOPS").bold()
+                                style("Status").bold()
                             );
                             println!("{}", style("─".repeat(65)).dim());
 
                             for (i, result) in benchmark_results.iter().enumerate() {
                                 let gflops = result["gflops"].as_f64().unwrap_or(0.0);
                                 let runtime = result["runtime_ms"].as_f64().unwrap_or(0.0);
-                                let stdev = result["stdev_gflops"].as_f64().unwrap_or(0.0);
                                 let status = result["status"].as_str().unwrap_or("UNKNOWN");
                                 let name = benchmark_names.get(i).unwrap();
 
@@ -429,13 +477,13 @@ pub fn pretty_print_benchmark_response(mut response: impl Read) {
                                 };
 
                                 println!(
-                                    "{} {:<3} {:<15} {:>12.2} {:>15.4} {:>15.6}",
+                                    "{} {:<3} {:<15} {:>12.2} {:>15.4} {:>15}",
                                     status_indicator,
                                     i + 1,
                                     name,
                                     gflops,
                                     runtime,
-                                    stdev
+                                    status
                                 );
                             }
 
@@ -476,7 +524,7 @@ pub fn pretty_print_benchmark_response(mut response: impl Read) {
                                     let bar = "█".repeat(bar_length);
                                     let styled_bar = style(bar).green();
 
-                                    println!("{:<15} {}", label, styled_bar);
+                                    println!("{} {}", label, styled_bar);
                                 }
                             }
 

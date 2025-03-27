@@ -1,7 +1,7 @@
 use oauth2::basic::BasicClient;
 use oauth2::{
     url, AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, RedirectUrl, Scope,
-    TokenResponse, TokenUrl,
+    TokenUrl,
 };
 use reqwest::blocking::Client as ReqwestClient;
 use serde::{Deserialize, Serialize};
@@ -205,7 +205,6 @@ impl GitHubAuth {
         struct TokenResponse {
             access_token: String,
             token_type: String,
-            scope: String,
         }
 
         let token: TokenResponse = response.json().expect("Failed to parse token response");

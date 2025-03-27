@@ -9,18 +9,26 @@ fn main() {
     let auth_info = ensure_authenticated();
     let username = auth_info.github_username;
     let parameters = Parameters::new(Some(username));
+
     let command_type = parameters.get_command_name();
-    let gpu = parameters.get_gpu();
+    let dtype = parameters.get_dtype();
+    let gpu_type = parameters.get_gpu_type();
+    let problem_def = parameters.get_problem_def();
+    let problem = parameters.get_problem();
+    let language = parameters.get_language();
 
     let modal_slug =
         std::env::var("MODAL_SLUG").unwrap_or_else(|_| COMPILED_MODAL_SLUG.to_string());
-    let endpoint = format!("{}/{}-{}", modal_slug, command_type, gpu);
+    let endpoint = format!("{}/{}-{}", modal_slug, command_type, gpu_type);
     let endpoint = endpoint.as_str();
 
     let response = client::send_post_request(
         endpoint,
         &parameters.get_solution_code(),
-        &parameters.get_problem(),
+        &problem,
+        &problem_def,
+        &dtype,
+        &language,
     );
 
     match command_type.as_str() {
