@@ -42,6 +42,9 @@ jobs:
         env:
           # This is passed in at compile time from github secrets, NOT ENV
           MODAL_SLUG: ${{ secrets.MODAL_SLUG }}
+          CLIENT_ID: ${{ secrets.CLIENT_ID }}
+          CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+          PROBLEM_ENDPOINT: ${{ secrets.PROBLEM_ENDPOINT }}
 
       - name: Rename binary for consistent naming
         run: |
