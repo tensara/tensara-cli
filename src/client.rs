@@ -73,6 +73,7 @@ pub fn send_post_request(
 
 pub fn get_problem_definition(endpoint: &str) -> String {
     let client = Client::new();
+    println!("{}", endpoint);
     let response = client.get(endpoint).send().expect("Failed to send request");
     response.text().expect("Failed to read response")
 }
