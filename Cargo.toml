@@ -11,4 +11,8 @@ serde_json = "1.0.140"
 indicatif = "0.17.11"
 console = "0.15.11"
 dotenv = "0.15.0"
-reqwest = { version = "0.12.14", features = ["blocking"] }
+reqwest = { version = "0.12.14", features = ["json", "blocking"] }
+dirs = "6.0.0"
+oauth2 = "5.0.0"
+webbrowser = "1.0.4"
+chrono = "0.4.31"

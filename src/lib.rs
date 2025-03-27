@@ -1,3 +1,4 @@
+pub mod auth;
 pub mod client;
 pub mod parser;
 pub mod pretty;
@@ -12,7 +13,7 @@ pub struct Parameters {
 }
 
 impl Parameters {
-    pub fn new() -> Self {
+    pub fn new(username: Option<String>) -> Self {
         let command_matches = match parser::parse_args(None) {
             Ok(matches) => matches,
             Err(e) => match e.kind() {
@@ -39,7 +40,7 @@ impl Parameters {
                 Self::from_subcommand("benchmark", parser::get_benchmark_matches(&command_matches))
             }
             _ => {
-                pretty::print_welcome_message();
+                pretty::print_welcome_message(username);
                 std::process::exit(0);
             }
         }

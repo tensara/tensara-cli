@@ -676,8 +676,16 @@ fn extract_value_from_error(error_message: &str) -> Option<String> {
     None
 }
 
-pub fn print_welcome_message() {
-    println!("\n{}", style("✨ WELCOME TO TENSARA ✨").blue().bold());
+pub fn print_welcome_message(username: Option<String>) {
+    println!(
+        "\n{}",
+        style(format!(
+            "✨ Welcome to Tensara, {} ✨",
+            username.unwrap_or_default()
+        ))
+        .blue()
+        .bold()
+    );
     println!("{}", style("═".repeat(60)).dim());
 
     println!("\n{}", style("About:").blue().bold());

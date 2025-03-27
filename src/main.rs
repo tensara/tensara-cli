@@ -1,13 +1,14 @@
 use dotenv::dotenv;
-use tensara::{client, pretty, Parameters};
+use tensara::{auth::ensure_authenticated, client, pretty, Parameters};
 
 const COMPILED_MODAL_SLUG: &str = env!("COMPILED_MODAL_SLUG");
 
 fn main() {
     #[cfg(debug_assertions)]
     dotenv().ok();
-
-    let parameters = Parameters::new();
+    let auth_info = ensure_authenticated();
+    let username = auth_info.github_username;
+    let parameters = Parameters::new(Some(username));
     let command_type = parameters.get_command_name();
     let gpu = parameters.get_gpu();
 
