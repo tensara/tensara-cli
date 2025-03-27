@@ -96,7 +96,7 @@ main() {
   echo "====================="
   
   # Check for version argument
-  VERSION=${1:-"v0.1.0"}
+  VERSION=${1:-"v0.2.0"}
   
   detect_platform
   download_binary "$VERSION"
