@@ -456,13 +456,13 @@ pub fn pretty_print_benchmark_response(mut response: impl Read) {
 
                             println!("\n{}", style("Detailed Results:\n").bold().underlined());
                             println!(
-                                "{:<18} {:>15} {:>15} {:>15}",
+                                "{:<30} {:>10} {:>15} {:>15}",
                                 style("Test Case").bold(),
                                 style("GFLOPS").bold(),
                                 style("Runtime (ms)").bold(),
                                 style("Status").bold()
                             );
-                            println!("{}", style("─".repeat(65)).dim());
+                            println!("{}", style("─".repeat(75)).dim());
 
                             for (i, result) in benchmark_results.iter().enumerate() {
                                 let gflops = result["gflops"].as_f64().unwrap_or(0.0);
@@ -477,7 +477,7 @@ pub fn pretty_print_benchmark_response(mut response: impl Read) {
                                 };
 
                                 println!(
-                                    "{} {:<3} {:<15} {:>12.2} {:>15.4} {:>15}",
+                                    "{} {:<3} {:<24} {:>10.2} {:>15.4} {:>15}",
                                     status_indicator,
                                     i + 1,
                                     name,
@@ -487,12 +487,13 @@ pub fn pretty_print_benchmark_response(mut response: impl Read) {
                                 );
                             }
 
+                            // For the performance graph
                             if !benchmark_results.is_empty() {
                                 println!(
                                     "\n{}",
                                     style("Performance Graph (GFLOPS):").bold().underlined()
                                 );
-                                println!("{}", style("─".repeat(65)).dim());
+                                println!("{}", style("─".repeat(75)).dim());
 
                                 let max_gflops = benchmark_results
                                     .iter()
@@ -501,24 +502,28 @@ pub fn pretty_print_benchmark_response(mut response: impl Read) {
 
                                 let graph_width = 40;
 
+                                // Find the maximum name length for proper alignment
+                                let max_name_length = benchmark_names
+                                    .iter()
+                                    .map(|name| name.len())
+                                    .max()
+                                    .unwrap_or(15);
+
+                                // Pad all names to the same length
+                                let padded_name_length = max_name_length + 2; // Add some extra space
+
                                 for (i, result) in benchmark_results.iter().enumerate() {
                                     let gflops = result["gflops"].as_f64().unwrap_or(0.0);
                                     let name = benchmark_names.get(i).unwrap();
                                     let bar_length =
                                         ((gflops / max_gflops) * graph_width as f64) as usize;
 
-                                    let max_digits = benchmark_results
-                                        .iter()
-                                        .filter_map(|r| r["gflops"].as_f64())
-                                        .map(|g| format!("{:.2}", g).len())
-                                        .max()
-                                        .unwrap_or(7);
-
+                                    // Format with consistent padding
                                     let label = format!(
-                                        "{:<15} ({:.<width$.2}) ",
+                                        "{:<width$} ({:.2}) ",
                                         name,
                                         gflops,
-                                        width = max_digits
+                                        width = padded_name_length
                                     );
 
                                     let bar = "█".repeat(bar_length);
