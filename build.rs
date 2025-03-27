@@ -9,29 +9,23 @@ fn main() {
         }
     }
 
-    println!("cargo:rerun-if-env-changed=GITHUB_CLIENT_ID");
-    match std::env::var("GITHUB_CLIENT_ID") {
-        Ok(github_client_id) => {
-            println!(
-                "cargo:rustc-env=COMPILED_GITHUB_CLIENT_ID={}",
-                github_client_id
-            );
+    println!("cargo:rerun-if-env-changed=CLIENT_ID");
+    match std::env::var("CLIENT_ID") {
+        Ok(client_id) => {
+            println!("cargo:rustc-env=COMPILED_CLIENT_ID={}", client_id);
         }
         Err(_) => {
-            println!("cargo:rustc-env=COMPILED_GITHUB_CLIENT_ID=default-development-id");
+            println!("cargo:rustc-env=COMPILED_CLIENT_ID=default-development-id");
         }
     }
 
-    println!("cargo:rerun-if-env-changed=GITHUB_CLIENT_SECRET");
-    match std::env::var("GITHUB_CLIENT_SECRET") {
-        Ok(github_client_secret) => {
-            println!(
-                "cargo:rustc-env=COMPILED_GITHUB_CLIENT_SECRET={}",
-                github_client_secret
-            );
+    println!("cargo:rerun-if-env-changed=CLIENT_SECRET");
+    match std::env::var("CLIENT_SECRET") {
+        Ok(client_secret) => {
+            println!("cargo:rustc-env=COMPILED_CLIENT_SECRET={}", client_secret);
         }
         Err(_) => {
-            println!("cargo:rustc-env=COMPILED_GITHUB_CLIENT_SECRET=default-development-secret");
+            println!("cargo:rustc-env=COMPILED_CLIENT_SECRET=default-development-secret");
         }
     }
 

@@ -18,7 +18,7 @@ pub fn pretty_print_checker_streaming_response(mut response: impl Read) {
     compilation_pb.set_style(spinner_style.clone());
     compilation_pb.set_prefix("🔧");
     compilation_pb.enable_steady_tick(Duration::from_millis(80));
-    let mut total_tests = 0;
+    let mut _total_tests = 0;
     let mut completed_tests = 0;
     let mut test_progress: Option<ProgressBar> = None;
     let mut test_results: Vec<Value> = Vec::new();
@@ -92,12 +92,12 @@ pub fn pretty_print_checker_streaming_response(mut response: impl Read) {
                         }
                         Some("test_result") => {
                             if test_progress.is_none() && json["totalTests"].is_number() {
-                                total_tests = json["totalTests"].as_u64().unwrap_or(0) as usize;
+                                _total_tests = json["totalTests"].as_u64().unwrap_or(0) as usize;
                                 if compilation_pb.is_finished() {
                                     compilation_pb.finish();
                                 }
                                 let progress =
-                                    multi_progress.add(ProgressBar::new(total_tests as u64));
+                                    multi_progress.add(ProgressBar::new(_total_tests as u64));
                                 progress.set_style(progress_style.clone());
                                 progress.set_prefix("🧪 Tests");
                                 test_progress = Some(progress);

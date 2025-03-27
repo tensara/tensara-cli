@@ -13,8 +13,8 @@ use std::time::{Duration, SystemTime, UNIX_EPOCH};
 use url::Url;
 
 const AUTH_SERVER: &str = "http://localhost:8080";
-const COMPILED_GITHUB_CLIENT_ID: &str = env!("COMPILED_GITHUB_CLIENT_ID");
-const COMPILED_GITHUB_CLIENT_SECRET: &str = env!("COMPILED_GITHUB_CLIENT_SECRET");
+const COMPILED_CLIENT_ID: &str = env!("COMPILED_CLIENT_ID");
+const COMPILED_CLIENT_SECRET: &str = env!("COMPILED_CLIENT_SECRET");
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct AuthInfo {
@@ -52,10 +52,10 @@ pub struct GitHubAuth {
 impl GitHubAuth {
     pub fn new() -> Self {
         // Get GitHub OAuth client ID and secret from environment variables
-        let client_id = std::env::var("GITHUB_CLIENT_ID")
-            .unwrap_or_else(|_| COMPILED_GITHUB_CLIENT_ID.to_string());
-        let client_secret = std::env::var("GITHUB_CLIENT_SECRET")
-            .unwrap_or_else(|_| COMPILED_GITHUB_CLIENT_SECRET.to_string());
+        let client_id =
+            std::env::var("CLIENT_ID").unwrap_or_else(|_| COMPILED_CLIENT_ID.to_string());
+        let client_secret =
+            std::env::var("CLIENT_SECRET").unwrap_or_else(|_| COMPILED_CLIENT_SECRET.to_string());
 
         // Create auth token directory if it doesn't exist
         let home_dir = dirs::home_dir().expect("Could not find home directory");
