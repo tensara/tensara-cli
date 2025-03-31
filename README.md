@@ -1,6 +1,6 @@
 # CLI for Tensara submissions (Beta)
 
-Currently in beta. Allow users to submit solutions to problems from the comfort of their own IDE.
+Currently in beta. Allow users to practice Tensara problems from the comfort of their own IDE.
 
 ## Install
 For Linux/Mac:
