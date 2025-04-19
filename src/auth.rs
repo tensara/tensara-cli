@@ -22,6 +22,7 @@ pub struct AuthInfo {
     pub token_type: String,
     pub expires_at_secs: Option<u64>,
     pub github_username: String,
+    pub nextauth_session_token: Option<String>,
 }
 
 impl AuthInfo {
@@ -106,7 +107,8 @@ impl GitHubAuth {
 
         // Set up auth and token URLs
         let auth_url = AuthUrl::new("https://github.com/login/oauth/authorize".to_string())
-            .expect("Invalid authorization endpoint URL");
+        .expect("Invalid authorization endpoint URL");
+
         let token_url = TokenUrl::new("https://github.com/login/oauth/access_token".to_string())
             .expect("Invalid token endpoint URL");
 
@@ -227,6 +229,7 @@ impl GitHubAuth {
             token_type: token.token_type,
             expires_at_secs,
             github_username,
+            nextauth_session_token: None, // This will be set later
         };
 
         // Save the auth info

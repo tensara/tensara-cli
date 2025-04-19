@@ -2,7 +2,7 @@ pub mod auth;
 pub mod client;
 pub mod parser;
 pub mod pretty;
-
+pub mod trpc;
 use clap::ArgMatches;
 
 const COMPILED_PROBLEM_ENDPOINT: &str = env!("COMPILED_PROBLEM_URL");

@@ -1,5 +1,5 @@
 use dotenv::dotenv;
-use tensara::{auth::ensure_authenticated, client, pretty, Parameters};
+use tensara::{auth::ensure_authenticated, client, pretty, trpc::*, Parameters};
 
 const COMPILED_MODAL_SLUG: &str = env!("COMPILED_MODAL_SLUG");
 
@@ -7,8 +7,24 @@ fn main() {
     #[cfg(debug_assertions)]
     dotenv().ok();
     let auth_info = ensure_authenticated();
+    // TESTING
+    call_trpc_user_stats(&auth_info);
+    // let problems = get_all_problems().unwrap();
+    // for p in problems {
+    //     println!(
+    //         "{} [{}] by {}",
+    //         p.title,
+    //         p.difficulty.unwrap_or_default(),
+    //         p.author.unwrap_or_default()
+    //     );
+    // }
+    let problem = get_problem_by_slug("avg-pool-1d").unwrap();
+    println!("{}: {}", problem.title, problem.slug);
+
+    // END TESTING
+
     let username = auth_info.github_username;
-    let parameters = Parameters::new(Some(username));
+    let parameters: Parameters = Parameters::new(Some(username));
 
     let command_type = parameters.get_command_name();
     let dtype = parameters.get_dtype();
