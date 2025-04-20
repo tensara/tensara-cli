@@ -18,8 +18,30 @@ fn main() {
     //         p.author.unwrap_or_default()
     //     );
     // }
-    let problem = get_problem_by_slug("avg-pool-1d").unwrap();
-    println!("{}: {}", problem.title, problem.slug);
+    // let problem = get_problem_by_slug("avg-pool-1d").unwrap();
+    // println!("{}: {}", problem.title, problem.slug);
+    let input = CreateSubmissionInput {
+        problemSlug: "vector-addition".to_string(),
+     code: "#include <cuda_runtime.h>\n\n__global__ void vector_add(const float* a, const float* b, float* c, size_t n) {\n    int i = blockIdx.x * blockDim.x + threadIdx.x;\n    if (i < n) {\n        c[i] = a[i] + b[i];\n    }\n}\n\nextern \"C\" void solution(const float* d_input1, const float* d_input2, float* d_output, size_t n) {\n    int threads_per_block = 512;\n    int num_blocks = (n + threads_per_block - 1) / threads_per_block;\n    vector_add<<<num_blocks, threads_per_block>>>(d_input1, d_input2, d_output, n);\n}".to_string(),
+ 
+
+        language: "cuda".to_string(),
+        gpuType: "T4".to_string(),
+    };
+
+    let submission = create_submission(
+        &auth_info,
+        input.problemSlug.as_str(),
+        input.code.as_str(),
+        input.language.as_str(),
+        input.gpuType.as_str(),
+    ).unwrap();
+    println!("Submission created: {}", submission.id);
+    match direct_submit(&auth_info, submission.id.as_str()) {
+        Ok(()) => println!("Direct submit successful"),
+        Err(e) => eprintln!("Direct submit failed: {}", e),
+    }
+    
 
     // END TESTING
 

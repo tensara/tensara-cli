@@ -1,6 +1,6 @@
 use crate::auth::AuthInfo;
 use reqwest::blocking::Client;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use urlencoding::encode;
 
@@ -90,4 +90,136 @@ pub fn get_problem_by_slug(slug: &str) -> Result<ProblemDetails, Box<dyn std::er
     Ok(parsed.result.data.json)
 }
 
+#[derive(Debug, Deserialize, Serialize)]
+pub struct CreateSubmissionInput {
+    pub problemSlug: String,
+    pub code: String,
+    pub language: String,
+    pub gpuType: String,
+}
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Submission {
+    pub id: String,
+    pub status: Option<String>,
+    pub language: Option<String>,
+    pub gpuType: Option<String>,
+    pub problemId: String,
+    pub userId: String,
+}
+
+pub fn create_submission(
+    auth: &AuthInfo,
+    problem_slug: &str,
+    code: &str,
+    language: &str,
+    gpu_type: &str,
+) -> Result<Submission, Box<dyn std::error::Error>> {
+    let client = Client::new();
+    let url = "https://tensara.org/api/trpc/problems.createSubmission";
+
+    let input_json = serde_json::json!({
+
+            "json": {
+                "problemSlug": problem_slug,
+                "code": code,
+                "language": language,
+                "gpuType": gpu_type
+            }
+    });
+
+    let response = client
+        .post(url)
+        .header("Content-Type", "application/json")
+        .header("User-Agent", "tensara-cli")
+        .header(
+            "Cookie",
+            format!(
+                "__Secure-next-auth.session-token={}",
+                auth.nextauth_session_token.as_ref().unwrap()
+            ),
+        )
+        .json(&input_json)
+        .send()?;
+
+    if !response.status().is_success() {
+        let error_text = response.text()?;
+        return Err(format!("Error from server: {}", error_text).into());
+    }
+
+    let parsed: TrpcResult<Submission> = response.json()?;
+    Ok(parsed.result.data.json)
+}
+
+// #[derive(Debug, Serialize, Deserialize)]
+// pub struct SubmitStatus {
+//     pub submissionId: String,
+//     pub problemSlug: String,
+// }
+
+// pub fn submit(
+//     auth: &AuthInfo,
+//     submission_id: &str,
+// ) -> Result<SubmitStatus, Box<dyn std::error::Error>> {
+//     let client = Client::new();
+//     let url = "https://tensara.org/api/trpc/problems.submit";
+
+//     let input_json = serde_json::json!({
+//             "json": {
+//                 "submissionId": submission_id,
+//             }
+//     });
+
+//     let response = client
+//         .post(url)
+//         .header("Content-Type", "application/json")
+//         .header("User-Agent", "tensara-cli")
+//         .header(
+//             "Cookie",
+//             format!(
+//                 "__Secure-next-auth.session-token={}",
+//                 auth.nextauth_session_token.as_ref().unwrap()
+//             ),
+//         )
+//         .json(&input_json)
+//         .send()?;
+
+//     if !response.status().is_success() {
+//         let error_text = response.text()?;
+//         return Err(format!("Error from server: {}", error_text).into());
+//     }
+
+//     let parsed: TrpcResult<SubmitStatus> = response.json()?;
+//     Ok(parsed.result.data.json)
+// }
+
+pub fn direct_submit(
+    auth: &AuthInfo,
+    submission_id: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let client = Client::new();
+    let url = "https://tensara.org/api/submissions/direct-submit";
+
+    let body = serde_json::json!({ "submissionId": submission_id });
+
+    let response = client
+        .post(url)
+        .header("Content-Type", "application/json")
+        .header("User-Agent", "tensara-cli")
+        .header(
+            "Cookie",
+            format!(
+                "__Secure-next-auth.session-token={}",
+                auth.nextauth_session_token.as_ref().unwrap()
+            ),
+        )
+        .json(&body)
+        .send()?;
+
+    if response.status().is_success() {
+        Ok(())
+    } else {
+        let error_text = response.text()?;
+        Err(format!("Direct submit failed: {}", error_text).into())
+    }
+}
