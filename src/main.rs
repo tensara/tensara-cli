@@ -1,5 +1,10 @@
 use dotenv::dotenv;
-use tensara::{auth::ensure_authenticated, client, pretty, trpc::*, Parameters};
+use tensara::{
+    auth::{ensure_authenticated, ensure_authenticated_next},
+    client, pretty,
+    trpc::*,
+    Parameters,
+};
 
 const COMPILED_MODAL_SLUG: &str = env!("COMPILED_MODAL_SLUG");
 
@@ -23,7 +28,6 @@ fn main() {
     let input = CreateSubmissionInput {
         problemSlug: "vector-addition".to_string(),
      code: "#include <cuda_runtime.h>\n\n__global__ void vector_add(const float* a, const float* b, float* c, size_t n) {\n    int i = blockIdx.x * blockDim.x + threadIdx.x;\n    if (i < n) {\n        c[i] = a[i] + b[i];\n    }\n}\n\nextern \"C\" void solution(const float* d_input1, const float* d_input2, float* d_output, size_t n) {\n    int threads_per_block = 512;\n    int num_blocks = (n + threads_per_block - 1) / threads_per_block;\n    vector_add<<<num_blocks, threads_per_block>>>(d_input1, d_input2, d_output, n);\n}".to_string(),
- 
 
         language: "cuda".to_string(),
         gpuType: "T4".to_string(),
@@ -36,17 +40,16 @@ fn main() {
         input.language.as_str(),
         input.gpuType.as_str(),
     ).unwrap();
-    println!("Submission created: {}", submission.id);
-    match direct_submit(&auth_info, submission.id.as_str()) {
-        Ok(()) => println!("Direct submit successful"),
-        Err(e) => eprintln!("Direct submit failed: {}", e),
-    }
-    
+    // println!("Submission created: {}", submission.id);
+    // match direct_submit(&auth_info, submission.id.as_str()) {
+    //     Ok(()) => println!("Direct submit successful"),
+    //     Err(e) => eprintln!("Direct submit failed: {}", e),
+    // }
 
     // END TESTING
 
-    let username = auth_info.github_username;
-    let parameters: Parameters = Parameters::new(Some(username));
+    let username = &auth_info.github_username;
+    let parameters: Parameters = Parameters::new(Some(username.clone()));
 
     let command_type = parameters.get_command_name();
     let dtype = parameters.get_dtype();
@@ -72,6 +75,16 @@ fn main() {
     match command_type.as_str() {
         "benchmark" => pretty::pretty_print_benchmark_response(response),
         "checker" => pretty::pretty_print_checker_streaming_response(response),
+        "submit" => {
+            if ensure_authenticated_next() {
+                println!("Auth successfull....");
+                pretty::pretty_print_submit_streaming_response(
+                    direct_submit_read(&auth_info, submission.id.as_str())
+                );
+            } else {
+                eprintln!("Authentication failed. Please paste your Next Token into your tensara auth file.");
+            }
+        }
         _ => unreachable!("Invalid command type"),
     }
 

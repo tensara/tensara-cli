@@ -2,6 +2,7 @@ use crate::auth::AuthInfo;
 use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
+use std::io::Read;
 use urlencoding::encode;
 
 #[derive(Debug, Deserialize)]
@@ -151,48 +152,6 @@ pub fn create_submission(
     Ok(parsed.result.data.json)
 }
 
-// #[derive(Debug, Serialize, Deserialize)]
-// pub struct SubmitStatus {
-//     pub submissionId: String,
-//     pub problemSlug: String,
-// }
-
-// pub fn submit(
-//     auth: &AuthInfo,
-//     submission_id: &str,
-// ) -> Result<SubmitStatus, Box<dyn std::error::Error>> {
-//     let client = Client::new();
-//     let url = "https://tensara.org/api/trpc/problems.submit";
-
-//     let input_json = serde_json::json!({
-//             "json": {
-//                 "submissionId": submission_id,
-//             }
-//     });
-
-//     let response = client
-//         .post(url)
-//         .header("Content-Type", "application/json")
-//         .header("User-Agent", "tensara-cli")
-//         .header(
-//             "Cookie",
-//             format!(
-//                 "__Secure-next-auth.session-token={}",
-//                 auth.nextauth_session_token.as_ref().unwrap()
-//             ),
-//         )
-//         .json(&input_json)
-//         .send()?;
-
-//     if !response.status().is_success() {
-//         let error_text = response.text()?;
-//         return Err(format!("Error from server: {}", error_text).into());
-//     }
-
-//     let parsed: TrpcResult<SubmitStatus> = response.json()?;
-//     Ok(parsed.result.data.json)
-// }
-
 pub fn direct_submit(
     auth: &AuthInfo,
     submission_id: &str,
@@ -222,4 +181,26 @@ pub fn direct_submit(
         let error_text = response.text()?;
         Err(format!("Direct submit failed: {}", error_text).into())
     }
+}
+
+pub fn direct_submit_read(auth: &AuthInfo, submission_id: &str) -> impl Read {
+    let client = Client::new();
+    let url = "https://tensara.org/api/submissions/direct-submit";
+
+    let body = serde_json::json!({ "submissionId": submission_id });
+
+    client
+        .post(url)
+        .header("Content-Type", "application/json")
+        .header("User-Agent", "tensara-cli")
+        .header(
+            "Cookie",
+            format!(
+                "__Secure-next-auth.session-token={}",
+                auth.nextauth_session_token.as_ref().unwrap()
+            ),
+        )
+        .json(&body)
+        .send()
+        .expect("Failed to send request")
 }

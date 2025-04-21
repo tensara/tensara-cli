@@ -107,7 +107,7 @@ impl GitHubAuth {
 
         // Set up auth and token URLs
         let auth_url = AuthUrl::new("https://github.com/login/oauth/authorize".to_string())
-        .expect("Invalid authorization endpoint URL");
+            .expect("Invalid authorization endpoint URL");
 
         let token_url = TokenUrl::new("https://github.com/login/oauth/access_token".to_string())
             .expect("Invalid token endpoint URL");
@@ -277,5 +277,14 @@ pub fn ensure_authenticated() -> AuthInfo {
             let auth_info = auth.authenticate();
             auth_info
         }
+    }
+}
+
+pub fn ensure_authenticated_next() -> bool {
+    let auth = GitHubAuth::new();
+    let auth_info = auth.get_auth_info().unwrap();
+    match auth_info.nextauth_session_token {
+        Some(_) => true,
+        None => false,
     }
 }

@@ -172,36 +172,68 @@ pub fn parse_args(args: Option<Vec<&str>>) -> Result<ArgMatches, clap::Error> {
                 \nFind available problems at https://tensara.org/problems",
             )
             .subcommand(
-                Command::new("checker")
+                Command::new("submit")
                     .about("Submit a solution to a problem and check if it is correct")
-                    .arg_required_else_help(true)
-                    .arg(
-                        Arg::new("gpu_type")
-                            .short('g')
-                            .value_name("GPU_TYPE")
-                            .help("Type of the GPU to use")
-                            .default_value("T4")
-                            .required(false)
-                            .value_parser(GPUParser),
-                    )
-                    .arg(
-                        Arg::new("problem_name")
-                            .short('p')
-                            .long("problem")
-                            .value_name("PROBLEM_NAME")
-                            .value_parser(ProblemNameParser)
-                            .help("Name of the problem to test")
-                            .required(true),
-                    )
-                    .arg(
-                        Arg::new("solution_file")
-                            .short('s')
-                            .long("solution")
-                            .value_name("SOLUTION_FILE")
-                            .help("Relative path to the solution file")
-                            .value_parser(SolutionFile)
-                            .required(true),
-                    )                    
+            //         .arg_required_else_help(true)
+            //         .arg(
+            //             Arg::new("gpu_type")
+            //                 .short('g')
+            //                 .value_name("GPU_TYPE")
+            //                 .help("Type of the GPU to use")
+            //                 .default_value("T4")
+            //                 .required(false)
+            //                 .value_parser(GPUParser),
+            //         )
+            //         .arg(
+            //             Arg::new("problem_name")
+            //                 .short('p')
+            //                 .long("problem")
+            //                 .value_name("PROBLEM_NAME")
+            //                 .value_parser(ProblemNameParser)
+            //                 .help("Name of the problem to test")
+            //                 .required(true),
+            //         )
+            //         .arg(
+            //             Arg::new("solution_file")
+            //                 .short('s')
+            //                 .long("solution")
+            //                 .value_name("SOLUTION_FILE")
+            //                 .help("Relative path to the solution file")
+            //                 .value_parser(SolutionFile)
+            //                 .required(true),
+            //         )                    
+            // )
+            // .subcommand(
+            //     Command::new("checker")
+            //         .about("Submit a solution to a problem and check if it is correct")
+            //         .arg_required_else_help(true)
+            //         .arg(
+            //             Arg::new("gpu_type")
+            //                 .short('g')
+            //                 .value_name("GPU_TYPE")
+            //                 .help("Type of the GPU to use")
+            //                 .default_value("T4")
+            //                 .required(false)
+            //                 .value_parser(GPUParser),
+            //         )
+            //         .arg(
+            //             Arg::new("problem_name")
+            //                 .short('p')
+            //                 .long("problem")
+            //                 .value_name("PROBLEM_NAME")
+            //                 .value_parser(ProblemNameParser)
+            //                 .help("Name of the problem to test")
+            //                 .required(true),
+            //         )
+            //         .arg(
+            //             Arg::new("solution_file")
+            //                 .short('s')
+            //                 .long("solution")
+            //                 .value_name("SOLUTION_FILE")
+            //                 .help("Relative path to the solution file")
+            //                 .value_parser(SolutionFile)
+            //                 .required(true),
+            //         )                    
             )
             .subcommand(
                 Command::new("benchmark")
@@ -261,6 +293,10 @@ pub fn get_checker_matches(matches: &ArgMatches) -> &ArgMatches {
 
 pub fn get_benchmark_matches(matches: &ArgMatches) -> &ArgMatches {
     matches.subcommand_matches("benchmark").unwrap()
+}
+
+pub fn get_submit_matches(matches: &ArgMatches) -> &ArgMatches {
+    matches.subcommand_matches("submit").unwrap()
 }
 
 pub fn get_language_type(matches: &ArgMatches) -> &String {
