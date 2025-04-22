@@ -45,6 +45,7 @@ impl Parameters {
                 Self::from_subcommand("benchmark", parser::get_benchmark_matches(&command_matches))
             }
             Some("submit") => {
+                // Self::from_subcommand("submit", parser::get_submit_matches(&command_matches))
                 // do nothing
                 Parameters {
                     problem_def: "".to_string(),

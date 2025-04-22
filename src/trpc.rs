@@ -1,3 +1,6 @@
+/*
+* Use these functions to call the tRPC endpoints from the Tensara API.
+*/
 use crate::auth::AuthInfo;
 use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
@@ -16,6 +19,35 @@ pub struct Problem {
 }
 
 #[derive(Debug, Deserialize)]
+pub struct ProblemDetails {
+    pub id: String,
+    pub slug: String,
+    pub title: String,
+    pub difficulty: Option<String>,
+    pub author: Option<String>,
+    pub tags: Option<Vec<String>>,
+    pub description: Option<String>,
+}
+
+#[derive(Debug, Deserialize, Serialize)]
+pub struct CreateSubmissionInput {
+    pub problemSlug: String,
+    pub code: String,
+    pub language: String,
+    pub gpuType: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Submission {
+    pub id: String,
+    pub status: Option<String>,
+    pub language: Option<String>,
+    pub gpuType: Option<String>,
+    pub problemId: String,
+    pub userId: String,
+}
+
+#[derive(Debug, Deserialize)]
 struct TrpcResult<T> {
     result: TrpcData<T>,
 }
@@ -30,6 +62,9 @@ struct TrpcJson<T> {
     json: T,
 }
 
+/*
+* Function to demonstrate how to call the tRPC endpoint for user stats
+*/
 pub fn get_all_problems() -> Result<Vec<Problem>, Box<dyn std::error::Error>> {
     let client = Client::new();
     let url = "https://tensara.org/api/trpc/problems.getAll";
@@ -40,6 +75,9 @@ pub fn get_all_problems() -> Result<Vec<Problem>, Box<dyn std::error::Error>> {
     Ok(parsed.result.data.json)
 }
 
+/*
+* Function to demonstrate how to call the tRPC endpoint for user stats
+*/
 pub fn call_trpc_user_stats(auth: &AuthInfo) {
     let session_cookie = format!(
         "__Secure-next-auth.session-token={}",
@@ -62,16 +100,9 @@ pub fn call_trpc_user_stats(auth: &AuthInfo) {
     println!("tRPC Response: {}", text);
 }
 
-#[derive(Debug, Deserialize)]
-pub struct ProblemDetails {
-    pub id: String,
-    pub slug: String,
-    pub title: String,
-    pub difficulty: Option<String>,
-    pub author: Option<String>,
-    pub tags: Option<Vec<String>>,
-    pub description: Option<String>,
-}
+/*
+* Use this function to get the problem details by slug
+*/
 
 pub fn get_problem_by_slug(slug: &str) -> Result<ProblemDetails, Box<dyn std::error::Error>> {
     let client = Client::new();
@@ -89,24 +120,6 @@ pub fn get_problem_by_slug(slug: &str) -> Result<ProblemDetails, Box<dyn std::er
 
     let parsed: TrpcResult<ProblemDetails> = response.json()?;
     Ok(parsed.result.data.json)
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct CreateSubmissionInput {
-    pub problemSlug: String,
-    pub code: String,
-    pub language: String,
-    pub gpuType: String,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Submission {
-    pub id: String,
-    pub status: Option<String>,
-    pub language: Option<String>,
-    pub gpuType: Option<String>,
-    pub problemId: String,
-    pub userId: String,
 }
 
 pub fn create_submission(
@@ -150,37 +163,6 @@ pub fn create_submission(
 
     let parsed: TrpcResult<Submission> = response.json()?;
     Ok(parsed.result.data.json)
-}
-
-pub fn direct_submit(
-    auth: &AuthInfo,
-    submission_id: &str,
-) -> Result<(), Box<dyn std::error::Error>> {
-    let client = Client::new();
-    let url = "https://tensara.org/api/submissions/direct-submit";
-
-    let body = serde_json::json!({ "submissionId": submission_id });
-
-    let response = client
-        .post(url)
-        .header("Content-Type", "application/json")
-        .header("User-Agent", "tensara-cli")
-        .header(
-            "Cookie",
-            format!(
-                "__Secure-next-auth.session-token={}",
-                auth.nextauth_session_token.as_ref().unwrap()
-            ),
-        )
-        .json(&body)
-        .send()?;
-
-    if response.status().is_success() {
-        Ok(())
-    } else {
-        let error_text = response.text()?;
-        Err(format!("Direct submit failed: {}", error_text).into())
-    }
 }
 
 pub fn direct_submit_read(auth: &AuthInfo, submission_id: &str) -> impl Read {
