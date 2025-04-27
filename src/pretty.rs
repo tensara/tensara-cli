@@ -1,10 +1,10 @@
 use console::style;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use reqwest::blocking::Response;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use serde_json::Value;
+use std::io::Read;
 use std::io::{BufRead, BufReader};
-use std::io::{Read, Write};
 use std::time::Duration;
 
 pub fn pretty_print_checker_streaming_response(mut response: impl Read) {

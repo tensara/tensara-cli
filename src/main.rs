@@ -41,25 +41,17 @@ fn main() {
         "benchmark" => pretty::pretty_print_benchmark_response(response),
         "checker" => pretty::pretty_print_checker_streaming_response(response),
         "submit" => {
-            // TODO: Make this generic with Parameters
             if ensure_authenticated_next() {
                 println!("Auth successful....");
-                let input = CreateSubmissionInput {
-                        problemSlug: "vector-addition".to_string(),
-                    code: "#include <cuda_runtime.h>\n\n__global__ void vector_add(const float* a, const float* b, float* c, size_t n) {\n    int i = blockIdx.x * blockDim.x + threadIdx.x;\n    if (i < n) {\n        c[i] = a[i] + b[i];\n    }\n}\n\nextern \"C\" void solution(const float* d_input1, const float* d_input2, float* d_output, size_t n) {\n    int threads_per_block = 512;\n    int num_blocks = (n + threads_per_block - 1) / threads_per_block;\n    vector_add<<<num_blocks, threads_per_block>>>(d_input1, d_input2, d_output, n);\n}".to_string(),
 
-                        language: "cuda".to_string(),
-                        gpuType: "T4".to_string(),
-                    };
+                let problem_slug = parameters.get_problem();
+                let code = parameters.get_solution_code();
+                let language = parameters.get_language();
+                let gpu_type = parameters.get_gpu_type();
 
-                let submission = create_submission(
-                    &auth_info,
-                    input.problemSlug.as_str(),
-                    input.code.as_str(),
-                    input.language.as_str(),
-                    input.gpuType.as_str(),
-                )
-                .unwrap();
+                let submission =
+                    create_submission(&auth_info, problem_slug, code, language, gpu_type).unwrap();
+
                 pretty::pretty_print_submit_streaming_response(direct_submit_read(
                     &auth_info,
                     submission.id.as_str(),
@@ -68,6 +60,7 @@ fn main() {
                 eprintln!("Authentication failed. Please paste your Next Token into your tensara auth file.");
             }
         }
+
         _ => unreachable!("Invalid command type"),
     }
 

@@ -45,17 +45,17 @@ impl Parameters {
                 Self::from_subcommand("benchmark", parser::get_benchmark_matches(&command_matches))
             }
             Some("submit") => {
-                // Self::from_subcommand("submit", parser::get_submit_matches(&command_matches))
+                Self::from_subcommand("submit", parser::get_submit_matches(&command_matches))
                 // do nothing
-                Parameters {
-                    problem_def: "".to_string(),
-                    problem: "".to_string(),
-                    solution_code: "".to_string(),
-                    dtype: "".to_string(),
-                    language: "".to_string(),
-                    command_name: "submit".to_string(),
-                    gpu_type: "".to_string(),
-                }
+                // Parameters {
+                //     problem_def: "".to_string(),
+                //     problem: "".to_string(),
+                //     solution_code: "".to_string(),
+                //     dtype: "".to_string(),
+                //     language: "".to_string(),
+                //     command_name: "submit".to_string(),
+                //     gpu_type: "".to_string(),
+                // }
             }
             _ => {
                 pretty::print_welcome_message(username);

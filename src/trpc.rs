@@ -4,10 +4,6 @@
 use crate::auth::AuthInfo;
 use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
-use serde_json::Value;
-use std::io::Read;
-use urlencoding::encode;
-use reqwest::blocking::Response;
 
 #[derive(Debug, Deserialize)]
 pub struct Problem {
@@ -31,21 +27,23 @@ pub struct ProblemDetails {
 }
 
 #[derive(Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct CreateSubmissionInput {
-    pub problemSlug: String,
+    pub problem_slug: String,
     pub code: String,
     pub language: String,
-    pub gpuType: String,
+    pub gpu_type: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Submission {
     pub id: String,
     pub status: Option<String>,
     pub language: Option<String>,
-    pub gpuType: Option<String>,
-    pub problemId: String,
-    pub userId: String,
+    pub gpu_type: Option<String>,
+    pub problem_id: String,
+    pub user_id: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -62,7 +60,6 @@ struct TrpcData<T> {
 struct TrpcJson<T> {
     json: T,
 }
-
 
 /*
 * Use this function to get all problems
@@ -101,8 +98,6 @@ pub fn call_trpc_user_stats(auth: &AuthInfo) {
     let text = response.text().unwrap();
     println!("tRPC Response: {}", text);
 }
-
-
 
 /*
 * Use this function to get the problem details by slug
