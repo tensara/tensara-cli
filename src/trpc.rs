@@ -7,6 +7,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::io::Read;
 use urlencoding::encode;
+use reqwest::blocking::Response;
 
 #[derive(Debug, Deserialize)]
 pub struct Problem {
@@ -62,8 +63,9 @@ struct TrpcJson<T> {
     json: T,
 }
 
+
 /*
-* Function to demonstrate how to call the tRPC endpoint for user stats
+* Use this function to get all problems
 */
 pub fn get_all_problems() -> Result<Vec<Problem>, Box<dyn std::error::Error>> {
     let client = Client::new();
@@ -99,6 +101,8 @@ pub fn call_trpc_user_stats(auth: &AuthInfo) {
     let text = response.text().unwrap();
     println!("tRPC Response: {}", text);
 }
+
+
 
 /*
 * Use this function to get the problem details by slug
@@ -165,7 +169,7 @@ pub fn create_submission(
     Ok(parsed.result.data.json)
 }
 
-pub fn direct_submit_read(auth: &AuthInfo, submission_id: &str) -> impl Read {
+pub fn direct_submit_read(auth: &AuthInfo, submission_id: &str) -> reqwest::blocking::Response {
     let client = Client::new();
     let url = "https://tensara.org/api/submissions/direct-submit";
 
@@ -186,3 +190,25 @@ pub fn direct_submit_read(auth: &AuthInfo, submission_id: &str) -> impl Read {
         .send()
         .expect("Failed to send request")
 }
+
+// pub fn direct_submit_read(auth: &AuthInfo, submission_id: &str) -> impl Read {
+//     let client = Client::new();
+//     let url = "https://tensara.org/api/submissions/direct-submit";
+
+//     let body = serde_json::json!({ "submissionId": submission_id });
+
+//     client
+//         .post(url)
+//         .header("Content-Type", "application/json")
+//         .header("User-Agent", "tensara-cli")
+//         .header(
+//             "Cookie",
+//             format!(
+//                 "__Secure-next-auth.session-token={}",
+//                 auth.nextauth_session_token.as_ref().unwrap()
+//             ),
+//         )
+//         .json(&body)
+//         .send()
+//         .expect("Failed to send request")
+// }
