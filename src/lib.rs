@@ -15,6 +15,8 @@ pub struct Parameters {
     language: String,
     command_name: String,
     gpu_type: String,
+    fields: Option<Vec<String>>,
+    sort_by: Option<String>,
 }
 
 impl Parameters {
@@ -46,21 +48,34 @@ impl Parameters {
             }
             Some("submit") => {
                 Self::from_subcommand("submit", parser::get_submit_matches(&command_matches))
-                // do nothing
-                // Parameters {
-                //     problem_def: "".to_string(),
-                //     problem: "".to_string(),
-                //     solution_code: "".to_string(),
-                //     dtype: "".to_string(),
-                //     language: "".to_string(),
-                //     command_name: "submit".to_string(),
-                //     gpu_type: "".to_string(),
-                // }
+            }
+            Some("problems") => {
+                Self::from_problems_matches(parser::get_problems_matches(&command_matches))
             }
             _ => {
                 pretty::print_welcome_message(username);
                 std::process::exit(0);
             }
+        }
+    }
+
+    fn from_problems_matches(matches: &ArgMatches) -> Self {
+        let fields = matches
+            .get_many::<String>("field")
+            .map(|vals| vals.map(|v| v.to_string()).collect());
+
+        let sort_by = matches.get_one::<String>("sort_by").map(|s| s.to_string());
+
+        Self {
+            problem_def: "".to_string(),
+            problem: "".to_string(),
+            solution_code: "".to_string(),
+            dtype: "".to_string(),
+            language: "".to_string(),
+            command_name: "problems".to_string(),
+            gpu_type: "".to_string(),
+            fields,
+            sort_by,
         }
     }
 
@@ -91,6 +106,8 @@ impl Parameters {
             language: language.to_string(),
             command_name,
             gpu_type,
+            fields: None,
+            sort_by: None,
         }
     }
 
@@ -123,5 +140,13 @@ impl Parameters {
 
     pub fn get_problem(&self) -> &String {
         &self.problem
+    }
+
+    pub fn get_fields(&self) -> Option<&Vec<String>> {
+        self.fields.as_ref()
+    }
+
+    pub fn get_sort_by(&self) -> Option<&String> {
+        self.sort_by.as_ref()
     }
 }

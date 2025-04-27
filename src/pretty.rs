@@ -929,6 +929,7 @@ pub fn print_welcome_message(username: Option<String>) {
     println!("\n{}", style("For Help:").blue().bold());
     println!("{}", style("─".repeat(60)).dim());
     println!("  • {}", style("tensara --help").yellow());
+    println!("  • {}", style("tensara submit --help").yellow());
     println!("  • {}", style("tensara checker --help").yellow());
     println!("  • {}", style("tensara benchmark --help").yellow());
 

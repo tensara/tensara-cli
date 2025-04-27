@@ -173,7 +173,7 @@ pub fn parse_args(args: Option<Vec<&str>>) -> Result<ArgMatches, clap::Error> {
             )
             .subcommand(
                 Command::new("submit")
-                    .about("Submit a solution to a problem and check if it is correct")
+                    .about("Submit a solution to a problem with your tensara account")
                     .arg_required_else_help(true)
                     .arg(
                         Arg::new("gpu_type")
@@ -205,7 +205,7 @@ pub fn parse_args(args: Option<Vec<&str>>) -> Result<ArgMatches, clap::Error> {
             )
             .subcommand(
                 Command::new("checker")
-                    .about("Submit a solution to a problem and check if it is correct")
+                    .about("Check if your solution is correct")
                     .arg_required_else_help(true)
                     .arg(
                         Arg::new("gpu_type")
@@ -266,6 +266,27 @@ pub fn parse_args(args: Option<Vec<&str>>) -> Result<ArgMatches, clap::Error> {
                             .value_parser(SolutionFile)
                             .required(true)
                     )
+            )
+            .subcommand(
+                Command::new("problems")
+                    .about("List all problems")
+                    .arg(
+                        Arg::new("field")
+                            .short('f')
+                            .long("field")
+                            .value_name("FIELD")
+                            .help("Field(s) to display: slug, title, difficulty, author, tags")
+                            .action(clap::ArgAction::Append)
+                            .required(false),
+                    )
+                    .arg(
+                        Arg::new("sort_by")
+                            .short('s')
+                            .long("sort-by")
+                            .value_name("FIELD")
+                            .help("Field to sort by: slug, title, difficulty, author")
+                            .required(false),
+                    )
             );
 
     if let Some(args) = args {
@@ -298,7 +319,13 @@ pub fn get_benchmark_matches(matches: &ArgMatches) -> &ArgMatches {
 pub fn get_submit_matches(matches: &ArgMatches) -> &ArgMatches {
     matches.subcommand_matches("submit").unwrap()
 }
+pub fn get_problems_matches(matches: &ArgMatches) -> &ArgMatches {
+    matches.subcommand_matches("problems").unwrap()
+}
 
 pub fn get_language_type(matches: &ArgMatches) -> &String {
     matches.get_one::<String>("language").unwrap()
 }
+
+
+
