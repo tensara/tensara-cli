@@ -6,6 +6,7 @@ use oauth2::{
 };
 use reqwest::blocking::Client as ReqwestClient;
 use serde::{Deserialize, Serialize};
+use std::fs;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Write};
 use std::net::TcpListener;
@@ -293,13 +294,16 @@ pub fn ensure_authenticated_next() -> bool {
 }
 
 /*
+* Do not delete while purging auth.rs
 * Function to pull problems from the server and update the auth.json file
+* This function is called after authentication
+* We could also have this as a separate command to update problems
 */
 
 pub fn pull_problems() {
     let auth = GitHubAuth::new();
 
-    let mut auth_info = match auth.get_auth_info() {
+    let auth_info = match auth.get_auth_info() {
         Some(info) => info,
         None => {
             println!("No existing auth found. Authenticating...");
@@ -329,4 +333,27 @@ pub fn pull_problems() {
     serde_json::to_writer_pretty(file, &extended_auth_info).expect("Failed to write auth info");
 
     println!("Pulled problems and updated auth.json successfully.");
+}
+
+pub fn is_valid_problem_slug(slug: &str) -> bool {
+    let auth_path = dirs::home_dir()
+        .expect("Could not find home directory")
+        .join(".tensara")
+        .join("auth.json");
+
+    if let Ok(auth_contents) = fs::read_to_string(auth_path) {
+        if let Ok(auth_json) = serde_json::from_str::<serde_json::Value>(&auth_contents) {
+            if let Some(problems) = auth_json.get("problems").and_then(|p| p.as_array()) {
+                return problems.iter().any(|problem| {
+                    problem
+                        .get("slug")
+                        .and_then(|s| s.as_str())
+                        .map(|s| s.eq_ignore_ascii_case(slug))
+                        .unwrap_or(false)
+                });
+            }
+        }
+    }
+
+    false
 }

@@ -1,6 +1,6 @@
 use dotenv::dotenv;
 use tensara::{
-    auth::{ensure_authenticated, ensure_authenticated_next, pull_problems},
+    auth::{ensure_authenticated, ensure_authenticated_next},
     client, pretty::{self, pretty_print_problems},
     trpc::*,
     Parameters,
@@ -41,6 +41,7 @@ fn main() {
         "benchmark" => pretty::pretty_print_benchmark_response(response),
         "checker" => pretty::pretty_print_checker_streaming_response(response),
         "submit" => {
+            // TODO: @sohamJog change after Tensara API is updated to just have one call for submission
             if ensure_authenticated_next() {
                 println!("Auth successful....");
 
