@@ -1,4 +1,3 @@
-use crate::auth::pull_problems;
 use crate::{trpc::get_all_problems, Parameters};
 use colored::*;
 use console::style;
@@ -80,7 +79,6 @@ pub fn pretty_print_problems(parameters: &Parameters) {
             "(view)".blue().underline()
         );
 
-        // println!("{} {} {}{}", slug, difficulty, view_link, author);
         println!("{} {} {} {}{}", slug, difficulty, author, tags, view_link);
     }
 }
