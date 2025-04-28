@@ -5,7 +5,7 @@ use crate::auth::AuthInfo;
 use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct Problem {
     pub id: String,
     pub slug: String,

@@ -1,3 +1,4 @@
+use crate::trpc::{get_all_problems, Problem};
 use oauth2::basic::BasicClient;
 use oauth2::{
     url, AuthUrl, AuthorizationCode, ClientId, ClientSecret, CsrfToken, RedirectUrl, Scope,
@@ -235,6 +236,8 @@ impl GitHubAuth {
         // Save the auth info
         self.save_auth_info(&auth_info);
 
+        pull_problems();
+
         auth_info
     }
 
@@ -287,4 +290,43 @@ pub fn ensure_authenticated_next() -> bool {
         Some(_) => true,
         None => false,
     }
+}
+
+/*
+* Function to pull problems from the server and update the auth.json file
+*/
+
+pub fn pull_problems() {
+    let auth = GitHubAuth::new();
+
+    let mut auth_info = match auth.get_auth_info() {
+        Some(info) => info,
+        None => {
+            println!("No existing auth found. Authenticating...");
+            auth.authenticate()
+        }
+    };
+
+    println!("Fetching problems...");
+    let problems = get_all_problems().unwrap_or_else(|_| {
+        eprintln!("Failed to fetch problems.");
+        std::process::exit(1);
+    });
+
+    #[derive(Serialize, Deserialize, Clone, Debug)]
+    struct ExtendedAuthInfo {
+        #[serde(flatten)]
+        auth_info: AuthInfo,
+        problems: Vec<Problem>,
+    }
+
+    let extended_auth_info = ExtendedAuthInfo {
+        auth_info,
+        problems,
+    };
+
+    let file = File::create(auth.auth_file_path).expect("Failed to create auth file");
+    serde_json::to_writer_pretty(file, &extended_auth_info).expect("Failed to write auth info");
+
+    println!("Pulled problems and updated auth.json successfully.");
 }

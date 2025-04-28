@@ -1,6 +1,6 @@
 use dotenv::dotenv;
 use tensara::{
-    auth::{ensure_authenticated, ensure_authenticated_next},
+    auth::{ensure_authenticated, ensure_authenticated_next, pull_problems},
     client, pretty::{self, pretty_print_problems},
     trpc::*,
     Parameters,
