@@ -41,7 +41,6 @@ fn main() {
         "benchmark" => pretty::pretty_print_benchmark_response(response),
         "checker" => pretty::pretty_print_checker_streaming_response(response),
         "submit" => {
-            // TODO: @sohamJog change after Tensara API is updated to just have one call for submission
             if ensure_authenticated_next() {
                 println!("Auth successful....");
 
@@ -50,13 +49,8 @@ fn main() {
                 let language = parameters.get_language();
                 let gpu_type = parameters.get_gpu_type();
 
-                let submission =
-                    create_submission(&auth_info, problem_slug, code, language, gpu_type).unwrap();
-
                 pretty::pretty_print_submit_streaming_response(direct_submit_read(
-                    &auth_info,
-                    submission.id.as_str(),
-                ));
+                    &auth_info, problem_slug, code, language, gpu_type));
             } else {
                 eprintln!("Authentication failed. Please paste your Next Token into your tensara auth file.");
             }

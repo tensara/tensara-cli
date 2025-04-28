@@ -121,54 +121,22 @@ pub fn get_problem_by_slug(slug: &str) -> Result<ProblemDetails, Box<dyn std::er
     Ok(parsed.result.data.json)
 }
 
-pub fn create_submission(
+pub fn direct_submit_read(
     auth: &AuthInfo,
     problem_slug: &str,
     code: &str,
     language: &str,
     gpu_type: &str,
-) -> Result<Submission, Box<dyn std::error::Error>> {
-    let client = Client::new();
-    let url = "https://tensara.org/api/trpc/problems.createSubmission";
-
-    let input_json = serde_json::json!({
-
-            "json": {
-                "problemSlug": problem_slug,
-                "code": code,
-                "language": language,
-                "gpuType": gpu_type
-            }
-    });
-
-    let response = client
-        .post(url)
-        .header("Content-Type", "application/json")
-        .header("User-Agent", "tensara-cli")
-        .header(
-            "Cookie",
-            format!(
-                "__Secure-next-auth.session-token={}",
-                auth.nextauth_session_token.as_ref().unwrap()
-            ),
-        )
-        .json(&input_json)
-        .send()?;
-
-    if !response.status().is_success() {
-        let error_text = response.text()?;
-        return Err(format!("Error from server: {}", error_text).into());
-    }
-
-    let parsed: TrpcResult<Submission> = response.json()?;
-    Ok(parsed.result.data.json)
-}
-
-pub fn direct_submit_read(auth: &AuthInfo, submission_id: &str) -> reqwest::blocking::Response {
+) -> reqwest::blocking::Response {
     let client = Client::new();
     let url = "https://tensara.org/api/submissions/direct-submit";
 
-    let body = serde_json::json!({ "submissionId": submission_id });
+    let body = serde_json::json!(  {
+       "problemSlug": problem_slug,
+       "code": code,
+       "language": language,
+       "gpuType": gpu_type
+    });
 
     client
         .post(url)
@@ -185,25 +153,3 @@ pub fn direct_submit_read(auth: &AuthInfo, submission_id: &str) -> reqwest::bloc
         .send()
         .expect("Failed to send request")
 }
-
-// pub fn direct_submit_read(auth: &AuthInfo, submission_id: &str) -> impl Read {
-//     let client = Client::new();
-//     let url = "https://tensara.org/api/submissions/direct-submit";
-
-//     let body = serde_json::json!({ "submissionId": submission_id });
-
-//     client
-//         .post(url)
-//         .header("Content-Type", "application/json")
-//         .header("User-Agent", "tensara-cli")
-//         .header(
-//             "Cookie",
-//             format!(
-//                 "__Secure-next-auth.session-token={}",
-//                 auth.nextauth_session_token.as_ref().unwrap()
-//             ),
-//         )
-//         .json(&body)
-//         .send()
-//         .expect("Failed to send request")
-// }
