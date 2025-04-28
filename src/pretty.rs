@@ -1,3 +1,5 @@
+use crate::{trpc::get_all_problems, Parameters};
+use colored::*;
 use console::style;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use reqwest::blocking::Response;
@@ -6,8 +8,6 @@ use serde_json::Value;
 use std::io::Read;
 use std::io::{BufRead, BufReader};
 use std::time::Duration;
-use crate::{trpc::get_all_problems, Parameters};
-use colored::*;
 
 pub fn pretty_print_problems(parameters: &Parameters) {
     println!("Fetching problems...");
@@ -34,51 +34,55 @@ pub fn pretty_print_problems(parameters: &Parameters) {
         }
     }
 
+    let max_slug_length = problems.iter().map(|p| p.slug.len()).max().unwrap_or(0);
+
     for problem in problems.iter() {
-        let mut line = String::new();
+        let slug = format!(
+            "{:<width$}",
+            problem.slug.bold(),
+            width = max_slug_length + 2
+        ); // +2 padding
+        let mut difficulty = String::new();
+        let mut author = String::new();
+        let mut tags = String::new();
 
         for field in &fields {
             match field.as_str() {
-                "slug" => {
-                    line.push_str(&format!("{}", problem.slug.bold()));
-                }
-                "title" => {
-                    line.push_str(&format!(" - {}", problem.title));
-                }
                 "difficulty" => {
-                    if let Some(difficulty) = &problem.difficulty {
-                        let colored_difficulty = match difficulty.as_str() {
-                            "EASY" => difficulty.green(),
-                            "MEDIUM" => difficulty.yellow(),
-                            "HARD" => difficulty.red(),
-                            _ => difficulty.normal(),
+                    if let Some(diff) = &problem.difficulty {
+                        let colored = match diff.as_str() {
+                            "EASY" => diff.green(),
+                            "MEDIUM" => diff.yellow(),
+                            "HARD" => diff.red(),
+                            _ => diff.normal(),
                         };
-                        line.push_str(&format!(" [{}]", colored_difficulty));
+                        let pad_width = 8 - diff.len();
+                        difficulty = format!("[{}]{}", colored, " ".repeat(pad_width));
                     }
                 }
                 "author" => {
-                    if let Some(author) = &problem.author {
-                        line.push_str(&format!(" by {}", author.dimmed()));
+                    if let Some(a) = &problem.author {
+                        author = format!(" by {}", a.dimmed());
                     }
                 }
                 "tags" => {
-                    if let Some(tags) = &problem.tags {
-                        line.push_str(&format!(" ({})", tags.join(", ")));
+                    if let Some(t) = &problem.tags {
+                        tags = format!(" ({})", t.join(", "));
                     }
                 }
                 _ => {}
             }
         }
 
-        line.push_str(&format!(
-            " {}",
-            format!(
-                "\x1b]8;;https://tensara.org/problems/{}\x1b\\{}\x1b]8;;\x1b\\",
-                problem.slug,
-                "(view)".blue().underline()
-            )
-        ));
-        println!("{}", line);
+        let view_link = format!(
+            "\x1b]8;;https://tensara.org/problems/{}\x1b\\{}\x1b]8;;\x1b\\",
+            problem.slug,
+            "(view)".blue().underline()
+        );
+
+        // println!("{} {} {}{}", slug, difficulty, view_link, author);
+        println!("{} {} {} {}{}", slug, difficulty, author, tags, view_link);
+
     }
 }
 
