@@ -6,6 +6,81 @@ use serde_json::Value;
 use std::io::Read;
 use std::io::{BufRead, BufReader};
 use std::time::Duration;
+use crate::{trpc::get_all_problems, Parameters};
+use colored::*;
+
+pub fn pretty_print_problems(parameters: &Parameters) {
+    println!("Fetching problems...");
+    let fields = parameters
+        .get_fields()
+        .cloned()
+        .unwrap_or_else(|| vec!["slug".to_string(), "title".to_string()]);
+    let sort_by = parameters.get_sort_by().cloned();
+
+    let mut problems = get_all_problems().unwrap_or_else(|_| {
+        eprintln!("Failed to fetch problems.");
+        std::process::exit(1);
+    });
+
+    if let Some(sort_field) = sort_by {
+        match sort_field.as_str() {
+            "slug" => problems.sort_by(|a, b| a.slug.cmp(&b.slug)),
+            "title" => problems.sort_by(|a, b| a.title.cmp(&b.title)),
+            "difficulty" => problems.sort_by(|a, b| a.difficulty.cmp(&b.difficulty)),
+            "author" => problems.sort_by(|a, b| a.author.cmp(&b.author)),
+            _ => {
+                eprintln!("Invalid sort field: {}", sort_field);
+            }
+        }
+    }
+
+    for problem in problems.iter() {
+        let mut line = String::new();
+
+        for field in &fields {
+            match field.as_str() {
+                "slug" => {
+                    line.push_str(&format!("{}", problem.slug.bold()));
+                }
+                "title" => {
+                    line.push_str(&format!(" - {}", problem.title));
+                }
+                "difficulty" => {
+                    if let Some(difficulty) = &problem.difficulty {
+                        let colored_difficulty = match difficulty.as_str() {
+                            "EASY" => difficulty.green(),
+                            "MEDIUM" => difficulty.yellow(),
+                            "HARD" => difficulty.red(),
+                            _ => difficulty.normal(),
+                        };
+                        line.push_str(&format!(" [{}]", colored_difficulty));
+                    }
+                }
+                "author" => {
+                    if let Some(author) = &problem.author {
+                        line.push_str(&format!(" by {}", author.dimmed()));
+                    }
+                }
+                "tags" => {
+                    if let Some(tags) = &problem.tags {
+                        line.push_str(&format!(" ({})", tags.join(", ")));
+                    }
+                }
+                _ => {}
+            }
+        }
+
+        line.push_str(&format!(
+            " {}",
+            format!(
+                "\x1b]8;;https://tensara.org/problems/{}\x1b\\{}\x1b]8;;\x1b\\",
+                problem.slug,
+                "(view)".blue().underline()
+            )
+        ));
+        println!("{}", line);
+    }
+}
 
 pub fn pretty_print_checker_streaming_response(mut response: impl Read) {
     let multi_progress = MultiProgress::new();

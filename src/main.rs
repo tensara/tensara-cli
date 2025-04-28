@@ -1,10 +1,10 @@
 use dotenv::dotenv;
 use tensara::{
     auth::{ensure_authenticated, ensure_authenticated_next},
-    client, pretty,
+    client, pretty::{self, pretty_print_problems},
     trpc::*,
     Parameters,
-};
+}; // Add this to the top if not already
 
 const COMPILED_MODAL_SLUG: &str = env!("COMPILED_MODAL_SLUG");
 
@@ -61,44 +61,7 @@ fn main() {
             }
         }
         "problems" => {
-            println!("Fetching problems...");
-            let fields = parameters
-                .get_fields()
-                .cloned()
-                .unwrap_or_else(|| vec!["slug".to_string(), "title".to_string()]);
-            let sort_by = parameters.get_sort_by().cloned();
-
-            let mut problems = get_all_problems().unwrap_or_else(|_| {
-                eprintln!("Failed to fetch problems.");
-                std::process::exit(1);
-            });
-
-            if let Some(sort_field) = sort_by {
-                match sort_field.as_str() {
-                    "slug" => problems.sort_by(|a, b| a.slug.cmp(&b.slug)),
-                    "title" => problems.sort_by(|a, b| a.title.cmp(&b.title)),
-                    "difficulty" => problems.sort_by(|a, b| a.difficulty.cmp(&b.difficulty)),
-                    "author" => problems.sort_by(|a, b| a.author.cmp(&b.author)),
-                    _ => {
-                        eprintln!("Invalid sort field: {}", sort_field);
-                    }
-                }
-            }
-
-            for problem in problems.iter() {
-                for field in &fields {
-                    match field.as_str() {
-                        "slug" => println!("Slug: {}", problem.slug),
-                        "title" => println!("Title: {}", problem.title),
-                        "difficulty" => println!("Difficulty: {:?}", problem.difficulty.clone().unwrap()),
-
-                        "author" => println!("Author: {:?}", problem.author.clone().unwrap()),
-                        "tags" => println!("Tags: {:?}", problem.tags.clone().unwrap()),
-                        _ => {}
-                    }
-                }
-                println!();
-            }
+          pretty_print_problems(&parameters);
         }
 
         _ => unreachable!("Invalid command type"),
