@@ -1,64 +1,32 @@
 use dotenv::dotenv;
 use tensara::{
-    auth::{ensure_authenticated, ensure_authenticated_next},
-    client, pretty::{self, pretty_print_problems},
-    trpc::*,
+    auth::AuthInfo,
+    client,
+    pretty::{self, pretty_print_problems},
     Parameters,
-}; // Add this to the top if not already
+};
 
-const COMPILED_MODAL_SLUG: &str = env!("COMPILED_MODAL_SLUG");
+const COMPILED_CHECKER_ENDPOINT: &str = env!("COMPILED_CHECKER_ENDPOINT");
+const COMPILED_BENCHMARK_ENDPOINT: &str = env!("COMPILED_BENCHMARK_ENDPOINT");
+const COMPILED_SUBMIT_ENDPOINT: &str = env!("COMPILED_SUBMIT_ENDPOINT");
 
 fn main() {
     #[cfg(debug_assertions)]
     dotenv().ok();
-    let auth_info = ensure_authenticated();
 
-    let username = &auth_info.github_username;
-    let parameters: Parameters = Parameters::new(Some(username.clone()));
+    let auth_info = AuthInfo::load();
+    let parameters: Parameters = Parameters::new(None);
 
-    let command_type = parameters.get_command_name();
-    let dtype = parameters.get_dtype();
-    let gpu_type = parameters.get_gpu_type();
-    let problem_def = parameters.get_problem_def();
-    let problem = parameters.get_problem();
-    let language = parameters.get_language();
-
-    let modal_slug =
-        std::env::var("MODAL_SLUG").unwrap_or_else(|_| COMPILED_MODAL_SLUG.to_string());
-    let endpoint = format!("{}/{}-{}", modal_slug, command_type, gpu_type);
-    let endpoint = endpoint.as_str();
-
-    let response = client::send_post_request(
-        endpoint,
-        &parameters.get_solution_code(),
-        &problem,
-        &problem_def,
-        &dtype,
-        &language,
-    );
-
-    match command_type.as_str() {
-        "benchmark" => pretty::pretty_print_benchmark_response(response),
-        "checker" => pretty::pretty_print_checker_streaming_response(response),
-        "submit" => {
-            if ensure_authenticated_next() {
-                println!("Auth successful....");
-
-                let problem_slug = parameters.get_problem();
-                let code = parameters.get_solution_code();
-                let language = parameters.get_language();
-                let gpu_type = parameters.get_gpu_type();
-
-                pretty::pretty_print_submit_streaming_response(direct_submit_read(
-                    &auth_info, problem_slug, code, language, gpu_type));
-            } else {
-                eprintln!("Authentication failed. Please paste your Next Token into your tensara auth file.");
-            }
+    match parameters.get_command_name().as_str() {
+        "checker" | "benchmark" | "submit" => {
+            execute_problem_command(&parameters, &auth_info);
         }
         "problems" => {
-          pretty_print_problems(&parameters);
+            pretty_print_problems(&parameters);
         }
-
+        "auth" => {
+            execute_auth_command(&parameters);
+        }
         _ => unreachable!("Invalid command type"),
     }
 
@@ -66,4 +34,70 @@ fn main() {
     // let mut response_string = String::new();
     // response.read_to_string(&mut response_string).unwrap();
     // println!("{}", response_string);
+}
+
+fn execute_problem_command(parameters: &Parameters, auth_info: &AuthInfo) {
+    if !parameters.is_problem_command() {
+        unreachable!("Invalid command type for problem execution");
+    }
+
+    let checker_endpoint =
+        std::env::var("CHECKER_ENDPOINT").unwrap_or_else(|_| COMPILED_CHECKER_ENDPOINT.to_string());
+    let benchmark_endpoint = std::env::var("BENCHMARK_ENDPOINT")
+        .unwrap_or_else(|_| COMPILED_BENCHMARK_ENDPOINT.to_string());
+    let submit_endpoint =
+        std::env::var("SUBMIT_ENDPOINT").unwrap_or_else(|_| COMPILED_SUBMIT_ENDPOINT.to_string());
+
+    let command_type = parameters.get_command_name();
+    let gpu_type = parameters.get_gpu_type();
+    let problem_slug = parameters.get_problem_slug();
+    let language = parameters.get_language();
+    let dtype = parameters.get_dtype();
+    let code = parameters.get_solution_code();
+
+    if auth_info.is_valid() {
+        let response = match command_type.as_str() {
+            "benchmark" => client::send_post_request_to_endpoint(
+                &benchmark_endpoint,
+                problem_slug,
+                code,
+                dtype,
+                language,
+                gpu_type,
+                auth_info,
+            ),
+            "checker" => client::send_post_request_to_endpoint(
+                &checker_endpoint,
+                problem_slug,
+                code,
+                dtype,
+                language,
+                gpu_type,
+                auth_info,
+            ),
+            "submit" => client::send_post_request_to_endpoint(
+                &submit_endpoint,
+                problem_slug,
+                code,
+                dtype,
+                language,
+                gpu_type,
+                auth_info,
+            ),
+            _ => unreachable!("Invalid command type for problem execution"),
+        };
+
+        match command_type.as_str() {
+            "benchmark" => pretty::pretty_print_benchmark_response(response),
+            "checker" => pretty::pretty_print_checker_streaming_response(response),
+            "submit" => pretty::pretty_print_submit_response(response),
+            _ => unreachable!("Invalid command type for problem execution"),
+        }
+    }
+}
+
+fn execute_auth_command(parameters: &Parameters) {
+    let token = parameters.get_token();
+    let auth_info = AuthInfo::new(token.unwrap().to_string(), "Tensara".to_string());
+    auth_info.save();
 }

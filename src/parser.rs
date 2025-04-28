@@ -279,6 +279,18 @@ pub fn parse_args(args: Option<Vec<&str>>) -> Result<ArgMatches, clap::Error> {
                             .help("Field to sort by: slug, title, difficulty, author")
                             .required(false),
                     )
+            )
+            .subcommand(
+                Command::new("auth")
+                    .about("Authenticate with the Tensara API to submit solutions")
+                    .arg(
+                        Arg::new("token")
+                            .short('t')
+                            .long("token")
+                            .value_name("TOKEN")
+                            .help("Provide authentication token directly")
+                            .required(false),
+                    ),
             );
 
     if let Some(args) = args {
@@ -306,6 +318,10 @@ pub fn get_checker_matches(matches: &ArgMatches) -> &ArgMatches {
 
 pub fn get_benchmark_matches(matches: &ArgMatches) -> &ArgMatches {
     matches.subcommand_matches("benchmark").unwrap()
+}
+
+pub fn get_auth_matches(matches: &ArgMatches) -> &ArgMatches {
+    matches.subcommand_matches("auth").unwrap()
 }
 
 pub fn get_submit_matches(matches: &ArgMatches) -> &ArgMatches {

@@ -1,8 +1,8 @@
+use crate::auth::pull_problems;
 use crate::{trpc::get_all_problems, Parameters};
 use colored::*;
 use console::style;
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
-use reqwest::blocking::Response;
 use serde::Deserialize;
 use serde_json::Value;
 use std::io::Read;
@@ -82,7 +82,6 @@ pub fn pretty_print_problems(parameters: &Parameters) {
 
         // println!("{} {} {}{}", slug, difficulty, view_link, author);
         println!("{} {} {} {}{}", slug, difficulty, author, tags, view_link);
-
     }
 }
 
@@ -100,12 +99,13 @@ pub fn pretty_print_checker_streaming_response(mut response: impl Read) {
     compilation_pb.set_style(spinner_style.clone());
     compilation_pb.set_prefix("🔧");
     compilation_pb.enable_steady_tick(Duration::from_millis(80));
-    let mut _total_tests = 0;
+    let mut total_tests = 0;
     let mut completed_tests = 0;
     let mut test_progress: Option<ProgressBar> = None;
     let mut test_results: Vec<Value> = Vec::new();
     let mut buffer = [0; 1024];
     let mut data_buffer = String::new();
+
     while let Ok(size) = response.read(&mut buffer) {
         if size == 0 {
             break;
@@ -120,10 +120,13 @@ pub fn pretty_print_checker_streaming_response(mut response: impl Read) {
                 let json_str = &line["data: ".len()..];
                 if let Ok(json) = serde_json::from_str::<Value>(json_str) {
                     match json["status"].as_str() {
-                        Some("compiling") => {
+                        Some("IN_QUEUE") => {
+                            compilation_pb.set_message("In queue...".to_string());
+                        }
+                        Some("COMPILING") => {
                             compilation_pb.set_message("Compiling your code...".to_string());
                         }
-                        Some("error") => {
+                        Some("ERROR") => {
                             compilation_pb.finish_with_message("Error detected!".to_string());
                             compilation_pb.set_prefix("❌");
                             compilation_pb.finish_and_clear();
@@ -161,10 +164,11 @@ pub fn pretty_print_checker_streaming_response(mut response: impl Read) {
                             );
                             return;
                         }
-                        Some("running") => {
+                        Some("CHECKING") => {
                             compilation_pb
                                 .finish_with_message("Compilation successful!".to_string());
                             compilation_pb.set_prefix("✅");
+                            compilation_pb.finish_and_clear();
                             let running_pb = multi_progress.add(ProgressBar::new_spinner());
                             running_pb.set_style(spinner_style.clone());
                             running_pb.set_prefix("🚀");
@@ -172,17 +176,19 @@ pub fn pretty_print_checker_streaming_response(mut response: impl Read) {
                             running_pb.enable_steady_tick(Duration::from_millis(80));
                             compilation_pb = running_pb;
                         }
-                        Some("test_result") => {
-                            if test_progress.is_none() && json["totalTests"].is_number() {
-                                _total_tests = json["totalTests"].as_u64().unwrap_or(0) as usize;
-                                if compilation_pb.is_finished() {
-                                    compilation_pb.finish();
+                        Some("TEST_RESULT") => {
+                            if test_progress.is_none() {
+                                if let Some(total) = json["total_tests"].as_u64() {
+                                    total_tests = total as usize;
+                                    if compilation_pb.is_finished() {
+                                        compilation_pb.finish();
+                                    }
+                                    let progress =
+                                        multi_progress.add(ProgressBar::new(total_tests as u64));
+                                    progress.set_style(progress_style.clone());
+                                    progress.set_prefix("🧪 Tests");
+                                    test_progress = Some(progress);
                                 }
-                                let progress =
-                                    multi_progress.add(ProgressBar::new(_total_tests as u64));
-                                progress.set_style(progress_style.clone());
-                                progress.set_prefix("🧪 Tests");
-                                test_progress = Some(progress);
                             }
                             if let Some(result) = json["result"].as_object() {
                                 let test_name = result["name"].as_str().unwrap_or("Unknown test");
@@ -198,34 +204,35 @@ pub fn pretty_print_checker_streaming_response(mut response: impl Read) {
                                 }
                             }
                         }
-                        Some("complete") => {
+                        Some("CHECKED") => {
                             if let Some(progress) = test_progress.take() {
                                 progress.finish_and_clear();
                             }
                             compilation_pb.finish_and_clear();
-                            let passed = json["passed"].as_bool().unwrap_or(false);
-                            let passed_tests = json["passed_tests"].as_u64().unwrap_or(0);
-                            let total = json["total_tests"].as_u64().unwrap_or(0);
-                            let early_exit = json["early_exit"].as_bool().unwrap_or(false);
+                            compilation_pb.set_prefix("✅");
+
+                            let passed_tests = json["passedTests"].as_u64().unwrap_or(0);
+                            let total_tests = json["totalTests"].as_u64().unwrap_or(0);
+                            let passed = passed_tests == total_tests;
+
                             multi_progress.clear().unwrap();
                             std::thread::sleep(Duration::from_millis(500));
+
                             let header = if passed {
                                 style("✨ ALL TESTS PASSED! ✨").green().bold()
                             } else {
                                 style("⚠️ TESTS FAILED ⚠️").red().bold()
                             };
+
                             println!("{}", header);
                             println!("{}", style("═".repeat(65)).dim());
-                            println!("Tests: {}/{} passed", passed_tests, total);
+                            println!("Tests: {}/{} passed", passed_tests, total_tests);
                             println!("{}", style("═".repeat(65)).dim());
-                            if early_exit {
-                                let reason = json["reason"].as_str().unwrap_or("Unknown reason");
-                                println!("\n{}", style("Testing stopped early:").yellow().bold());
-                                println!("{}", reason);
-                            }
+
                             println!("\n{}", style("Test Results:").bold().underlined());
+
                             if let Some(results) = json["test_results"].as_array() {
-                                for (_, result) in results.iter().enumerate() {
+                                for result in results.iter() {
                                     let test_id = result["test_id"].as_u64().unwrap_or(0);
                                     let test_name =
                                         result["name"].as_str().unwrap_or("Unknown test");
@@ -236,7 +243,8 @@ pub fn pretty_print_checker_streaming_response(mut response: impl Read) {
                                         style(status).red().bold()
                                     };
                                     println!("{}. {} - {}", test_id, test_name, status_style);
-                                    if status == "FAILED" {
+
+                                    if status == "FAILED" && result.get("debug_info").is_some() {
                                         if let Some(debug_info) = result["debug_info"].as_object() {
                                             println!(
                                                 "   {}",
@@ -324,6 +332,7 @@ pub fn pretty_print_checker_streaming_response(mut response: impl Read) {
                                                     } else {
                                                         value.to_string().replace("\"", "")
                                                     };
+
                                                     println!(
                                                         "   {} {}: {}",
                                                         style("■").cyan(),
@@ -337,6 +346,7 @@ pub fn pretty_print_checker_streaming_response(mut response: impl Read) {
                                     }
                                 }
                             } else {
+                                // Fallback to using the collected test results if test_results not in JSON
                                 for (i, result) in test_results.iter().enumerate() {
                                     let test_name =
                                         result["name"].as_str().unwrap_or("Unknown test");
@@ -349,6 +359,7 @@ pub fn pretty_print_checker_streaming_response(mut response: impl Read) {
                                     println!("{}. {} - {}", i + 1, test_name, status_style);
                                 }
                             }
+
                             println!("\n{}", style("═".repeat(65)).dim());
                         }
                         _ => {
@@ -390,7 +401,7 @@ struct ErrorData {
     message: Option<String>,
 }
 
-pub fn pretty_print_submit_streaming_response(response: Response) {
+pub fn pretty_print_submit_response(mut response: impl Read) {
     let multi_progress = MultiProgress::new();
 
     let spinner = multi_progress.add(ProgressBar::new_spinner());
@@ -421,6 +432,7 @@ pub fn pretty_print_submit_streaming_response(response: Response) {
         spinner.tick(); // tick to animate spinner
 
         if let Ok(line) = line {
+            println!("line: {}", line);
             if line.starts_with("event: ") {
                 current_event = Some(line[7..].trim().to_string());
                 continue;
@@ -548,10 +560,10 @@ pub fn pretty_print_benchmark_response(mut response: impl Read) {
                 let json_str = &line["data: ".len()..];
                 if let Ok(json) = serde_json::from_str::<Value>(json_str) {
                     match json["status"].as_str() {
-                        Some("compiling") => {
+                        Some("COMPILING") => {
                             compilation_pb.set_message("Compiling your code...".to_string());
                         }
-                        Some("error") => {
+                        Some("ERROR") => {
                             compilation_pb.finish_with_message("Error detected!".to_string());
                             compilation_pb.set_prefix("❌");
 
@@ -597,11 +609,11 @@ pub fn pretty_print_benchmark_response(mut response: impl Read) {
 
                             return;
                         }
-                        Some("sanity_check") => {
+                        Some("SANITY_CHECK") => {
                             compilation_pb.set_message("Sanity check passed!".to_string());
                             compilation_pb.set_prefix("✅");
                         }
-                        Some("running") => {
+                        Some("BENCHMARKING") => {
                             compilation_pb
                                 .finish_with_message("Compilation successful!".to_string());
                             compilation_pb.set_prefix("✅");
@@ -614,7 +626,7 @@ pub fn pretty_print_benchmark_response(mut response: impl Read) {
 
                             compilation_pb = running_pb;
                         }
-                        Some("test_result") => {
+                        Some("BENCHMARK_RESULT") => {
                             if benchmark_progress.is_none() && json["totalTests"].is_number() {
                                 _total_benchmarks =
                                     json["totalTests"].as_u64().unwrap_or(0) as usize;
@@ -652,7 +664,7 @@ pub fn pretty_print_benchmark_response(mut response: impl Read) {
                                 }
                             }
                         }
-                        Some("success") => {
+                        Some("ACCEPTED") => {
                             if let Some(progress) = benchmark_progress.take() {
                                 progress.finish_and_clear();
                             }
@@ -891,7 +903,10 @@ fn print_invalid_file_error() {
 }
 
 fn print_missing_arg_error(error_message: &str) {
-    println!("\n{}", style("⚠️ MISSING REQUIRED ARGUMENT ⚠️").red().bold());
+    println!(
+        "\n{}",
+        style("⚠️ MISSING REQUIRED ARGUMENT ⚠️").red().bold()
+    );
     println!("{}", style("═".repeat(60)).dim());
     println!("{}", style(error_message).red());
 

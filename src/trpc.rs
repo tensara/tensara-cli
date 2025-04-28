@@ -78,12 +78,7 @@ pub fn get_all_problems() -> Result<Vec<Problem>, Box<dyn std::error::Error>> {
 * Function to demonstrate how to call the tRPC endpoint for user stats
 */
 pub fn call_trpc_user_stats(auth: &AuthInfo) {
-    let session_cookie = format!(
-        "__Secure-next-auth.session-token={}",
-        auth.nextauth_session_token
-            .as_ref()
-            .expect("No session token found")
-    );
+    let session_cookie = format!("__Secure-next-auth.session-token={}", auth.access_token);
 
     let client = Client::new();
     let url = "https://tensara.org/api/trpc/problems.getUserStats";
@@ -119,37 +114,4 @@ pub fn get_problem_by_slug(slug: &str) -> Result<ProblemDetails, Box<dyn std::er
 
     let parsed: TrpcResult<ProblemDetails> = response.json()?;
     Ok(parsed.result.data.json)
-}
-
-pub fn direct_submit_read(
-    auth: &AuthInfo,
-    problem_slug: &str,
-    code: &str,
-    language: &str,
-    gpu_type: &str,
-) -> reqwest::blocking::Response {
-    let client = Client::new();
-    let url = "https://tensara.org/api/submissions/direct-submit";
-
-    let body = serde_json::json!(  {
-       "problemSlug": problem_slug,
-       "code": code,
-       "language": language,
-       "gpuType": gpu_type
-    });
-
-    client
-        .post(url)
-        .header("Content-Type", "application/json")
-        .header("User-Agent", "tensara-cli")
-        .header(
-            "Cookie",
-            format!(
-                "__Secure-next-auth.session-token={}",
-                auth.nextauth_session_token.as_ref().unwrap()
-            ),
-        )
-        .json(&body)
-        .send()
-        .expect("Failed to send request")
 }
