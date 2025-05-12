@@ -3,7 +3,6 @@ use tensara::{
     auth::AuthInfo,
     client,
     pretty::{self, pretty_print_problems},
-    problems::{pull_problems},
     Parameters,
 };
 
@@ -12,7 +11,6 @@ const COMPILED_BENCHMARK_ENDPOINT: &str = env!("COMPILED_BENCHMARK_ENDPOINT");
 const COMPILED_SUBMIT_ENDPOINT: &str = env!("COMPILED_SUBMIT_ENDPOINT");
 
 fn main() {
-    // pull_problems();
     #[cfg(debug_assertions)]
     dotenv().ok();
 
@@ -106,17 +104,19 @@ fn execute_auth_command(parameters: &Parameters) {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use tensara::auth::AuthInfo;
-    use tensara::problems::is_valid_problem_slug;
+    use tensara::problems::{is_valid_problem_slug};
 
     #[test]
     fn test_is_valid_problem_slug() {
-        let auth_info = AuthInfo::new("test_token".to_string(), "Tensara".to_string());
-        auth_info.save();
-        pull_problems();
         let slug = "vector-addition";
         assert!(is_valid_problem_slug(slug));
+    }
+
+    #[test]
+    fn test_is_not_valid_problem_slug() {
+        let slug = "vector-adition";
+        assert!(!is_valid_problem_slug(slug));
     }
 
     #[test]
