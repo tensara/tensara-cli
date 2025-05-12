@@ -1,6 +1,6 @@
 use dotenv::dotenv;
 use tensara::{
-    auth::AuthInfo,
+    auth::{pull_problems, AuthInfo},
     client,
     pretty::{self, pretty_print_problems},
     Parameters,
@@ -11,6 +11,9 @@ const COMPILED_BENCHMARK_ENDPOINT: &str = env!("COMPILED_BENCHMARK_ENDPOINT");
 const COMPILED_SUBMIT_ENDPOINT: &str = env!("COMPILED_SUBMIT_ENDPOINT");
 
 fn main() {
+    // Keep this line for debugging purposes
+
+    pull_problems();
     #[cfg(debug_assertions)]
     dotenv().ok();
 
