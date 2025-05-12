@@ -1,8 +1,9 @@
 use dotenv::dotenv;
 use tensara::{
-    auth::{pull_problems, AuthInfo},
+    auth::AuthInfo,
     client,
     pretty::{self, pretty_print_problems},
+    problems::{pull_problems},
     Parameters,
 };
 
@@ -11,9 +12,7 @@ const COMPILED_BENCHMARK_ENDPOINT: &str = env!("COMPILED_BENCHMARK_ENDPOINT");
 const COMPILED_SUBMIT_ENDPOINT: &str = env!("COMPILED_SUBMIT_ENDPOINT");
 
 fn main() {
-    // Keep this line for debugging purposes
-
-    pull_problems();
+    // pull_problems();
     #[cfg(debug_assertions)]
     dotenv().ok();
 
@@ -103,4 +102,28 @@ fn execute_auth_command(parameters: &Parameters) {
     let token = parameters.get_token();
     let auth_info = AuthInfo::new(token.unwrap().to_string(), "Tensara".to_string());
     auth_info.save();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tensara::auth::AuthInfo;
+    use tensara::problems::is_valid_problem_slug;
+
+    #[test]
+    fn test_is_valid_problem_slug() {
+        let auth_info = AuthInfo::new("test_token".to_string(), "Tensara".to_string());
+        auth_info.save();
+        pull_problems();
+        let slug = "vector-addition";
+        assert!(is_valid_problem_slug(slug));
+    }
+
+    #[test]
+    fn test_auth_info() {
+        let auth_info = AuthInfo::new("test_token".to_string(), "Tensara".to_string());
+        auth_info.save();
+        let loaded_auth_info = AuthInfo::load();
+        assert_eq!(auth_info.access_token, loaded_auth_info.access_token);
+    }
 }

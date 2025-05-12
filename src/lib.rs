@@ -3,6 +3,7 @@ pub mod client;
 pub mod parser;
 pub mod pretty;
 pub mod trpc;
+pub mod problems;
 use clap::ArgMatches;
 
 pub enum CommandType {

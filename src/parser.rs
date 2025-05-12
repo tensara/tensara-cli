@@ -1,21 +1,7 @@
 use clap::{builder::TypedValueParser, command, Arg, ArgMatches, Command};
 use std::ffi::OsStr;
 use std::path::Path;
-use crate::auth::is_valid_problem_slug;
-
-
-// #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-// pub enum ProblemNames {
-//     Conv1d,
-//     Conv2d,
-//     GemmRelu,
-//     LeakyRelu,
-//     MatrixMultiplication,
-//     MatrixVector,
-//     Relu,
-//     SquareMatmul,
-//     VectorAddition,
-// }
+use crate::problems::is_valid_problem_slug;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GPU {

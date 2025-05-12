@@ -97,7 +97,7 @@ pub fn pretty_print_checker_streaming_response(mut response: impl Read) {
     compilation_pb.set_style(spinner_style.clone());
     compilation_pb.set_prefix("🔧");
     compilation_pb.enable_steady_tick(Duration::from_millis(80));
-    let mut total_tests = 0;
+    let mut total_tests;
     let mut completed_tests = 0;
     let mut test_progress: Option<ProgressBar> = None;
     let mut test_results: Vec<Value> = Vec::new();
