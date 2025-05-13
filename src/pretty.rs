@@ -399,6 +399,12 @@ struct ErrorData {
     message: Option<String>,
 }
 
+pub fn pretty_print_auth() {
+    println!("\n🎉  Authentication successful!");
+    println!("Your token has been securely saved to ~/.tensara/auth.json");
+    println!("You're ready to run commands like `tensara submit` or `tensara benchmark`.\n");
+}
+
 
 pub fn pretty_print_submit_response(response: impl Read) {
     let multi_progress = MultiProgress::new();

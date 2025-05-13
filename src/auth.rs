@@ -1,3 +1,4 @@
+use crate::pretty::pretty_print_auth;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 
@@ -23,6 +24,7 @@ impl AuthInfo {
 
         let file = File::create(&auth_path).expect("Failed to create auth file");
         serde_json::to_writer(file, &self).expect("Failed to write auth info");
+        pretty_print_auth();
     }
 
     pub fn load() -> Self {
@@ -49,7 +51,6 @@ impl AuthInfo {
         serde_json::to_writer(file, &self).expect("Failed to write auth info");
     }
 }
-
 
 pub fn save_token(token: String) {
     let auth_info = AuthInfo::new(token, "Tensara".to_string());

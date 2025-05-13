@@ -22,22 +22,6 @@ struct ProblemNameParser;
 #[derive(Clone)]
 struct GPUParser;
 
-// impl std::fmt::Display for ProblemNames {
-//     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-//         match self {
-//             Self::Conv1d => write!(f, "conv-1d"),
-//             Self::Conv2d => write!(f, "conv-2d"),
-//             Self::GemmRelu => write!(f, "gemm-relu"),
-//             Self::LeakyRelu => write!(f, "leaky-relu"),
-//             Self::MatrixMultiplication => write!(f, "matrix-multiplication"),
-//             Self::MatrixVector => write!(f, "matrix-vector"),
-//             Self::Relu => write!(f, "relu"),
-//             Self::SquareMatmul => write!(f, "square-matmul"),
-//             Self::VectorAddition => write!(f, "vector-addition"),
-//         }
-//     }
-// }
-
 impl std::fmt::Display for GPU {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
