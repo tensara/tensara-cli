@@ -14,14 +14,14 @@ const COMPILED_SUBMIT_ENDPOINT: &str = env!("COMPILED_SUBMIT_ENDPOINT");
 
 fn main() {
 
-    let result = get_problem_by_slug("vector-addition");
-    assert!(result.is_ok());
-    let details = result.unwrap();
-    let params = details.parameters.unwrap_or_default();
-    let language = "cuda";
-    let data_type = "float16";
-    let starter_code = generate_starter_code(&params, language, data_type);
-    println!("{}", starter_code);
+    // let result = get_problem_by_slug("vector-addition");
+    // assert!(result.is_ok());
+    // let details = result.unwrap();
+    // let params = details.parameters.unwrap_or_default();
+    // let language = "cuda";
+    // let data_type = "float16";
+    // let starter_code = generate_starter_code(&params, language, data_type);
+    // println!("{}", starter_code);
 
 
 

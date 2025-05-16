@@ -5,7 +5,7 @@ use crate::trpc::ProblemParameter;
 pub fn generate_starter_code(
     parameters: &[ProblemParameter],
     language: &str,
-    data_type: &str, 
+    data_type: &str,
 ) -> String {
     let cpp_types = |dtype: &str| match dtype {
         "float" => "float",
@@ -94,6 +94,21 @@ def solution({}):
     } else {
         "".to_string()
     }
+}
+
+pub fn validate_code(code: &str, language: &str) -> Result<(), String> {
+    if language == "python" {
+        if code.contains("torch.") || code.contains("import torch") {
+            return Err("You cannot use PyTorch in the code!".into());
+        }
+
+        let exec_regex = regex::Regex::new(r"exec\s*\(\s*[^)]*\)").unwrap();
+        if exec_regex.is_match(code) {
+            return Err("You cannot use exec() in the code!".into());
+        }
+    }
+
+    Ok(())
 }
 
 /*
