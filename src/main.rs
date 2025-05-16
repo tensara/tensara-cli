@@ -105,7 +105,8 @@ fn execute_auth_command(parameters: &Parameters) {
 #[cfg(test)]
 mod tests {
     use tensara::auth::AuthInfo;
-    use tensara::problems::{is_valid_problem_slug};
+    use tensara::problems::is_valid_problem_slug;
+    use tensara::trpc::get_problem_by_slug;
 
     #[test]
     fn test_is_valid_problem_slug() {
@@ -125,5 +126,16 @@ mod tests {
         auth_info.save();
         let loaded_auth_info = AuthInfo::load();
         assert_eq!(auth_info.access_token, loaded_auth_info.access_token);
+    }
+
+    #[test]
+    #[ignore]
+    fn test_get_problem_by_slug_live() {
+        let result = get_problem_by_slug("vector-addition");
+        assert!(result.is_ok());
+        let details = result.unwrap();
+
+        assert_eq!(details.slug, "vector-addition");
+        assert!(details.parameters.is_some());
     }
 }

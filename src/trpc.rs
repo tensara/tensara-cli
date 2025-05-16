@@ -24,6 +24,20 @@ pub struct ProblemDetails {
     pub author: Option<String>,
     pub tags: Option<Vec<String>>,
     pub description: Option<String>,
+    pub parameters: Option<Vec<ProblemParameter>>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct ProblemParameter {
+    pub name: String,
+    #[serde(rename = "type")]
+    pub ty: String,
+    #[serde(rename = "const", default)]
+    pub const_: Option<String>,
+    #[serde(default)]
+    pub pointer: Option<String>,
+    #[serde(default)]
+    pub constant: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize)]
@@ -97,7 +111,6 @@ pub fn call_trpc_user_stats(auth: &AuthInfo) {
 /*
 * Use this function to get the problem details by slug
 */
-
 pub fn get_problem_by_slug(slug: &str) -> Result<ProblemDetails, Box<dyn std::error::Error>> {
     let client = Client::new();
     let input_json = serde_json::json!({ "json": { "slug": slug } }).to_string();
