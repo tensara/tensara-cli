@@ -1,10 +1,10 @@
 pub mod auth;
 pub mod client;
+pub mod init;
 pub mod parser;
 pub mod pretty;
-pub mod trpc;
 pub mod problems;
-pub mod init;
+pub mod trpc;
 use clap::ArgMatches;
 
 pub enum CommandType {
@@ -35,6 +35,9 @@ pub struct Parameters {
 
     // Auth command fields
     token: Option<String>,
+
+    // Init command fields
+    directory: Option<String>,
 }
 
 impl Parameters {
@@ -77,6 +80,7 @@ impl Parameters {
                 Self::from_problems_matches(parser::get_problems_matches(&command_matches))
             }
             Some("auth") => Self::from_auth_matches(parser::get_auth_matches(&command_matches)),
+            Some("init") => Self::from_init_matches(parser::get_init_matches(&command_matches)),
             _ => {
                 pretty::print_welcome_message(username);
                 std::process::exit(0);
@@ -102,6 +106,7 @@ impl Parameters {
             fields,
             sort_by,
             token: None,
+            directory: None,
         }
     }
 
@@ -119,6 +124,31 @@ impl Parameters {
             fields: None,
             sort_by: None,
             token,
+            directory: None,
+        }
+    }
+
+    fn from_init_matches(matches: &ArgMatches) -> Self {
+        let directory = matches
+            .get_one::<String>("directory")
+            .map(|s| s.to_string());
+
+        let language = matches.get_one::<String>("language").map(|s| s.to_string());
+
+        let problem = parser::get_problem_name(matches).to_string();
+
+        Self {
+            command_type: CommandType::Auth,
+            command_name: "init".to_string(),
+            problem_slug: Some(problem),
+            code: None,
+            dtype: None,
+            language: language,
+            gpu_type: None,
+            fields: None,
+            sort_by: None,
+            token: None,
+            directory,
         }
     }
 
@@ -147,6 +177,7 @@ impl Parameters {
             fields: None,
             sort_by: None,
             token: None,
+            directory: None,
         }
     }
 
@@ -187,6 +218,12 @@ impl Parameters {
         self.language
             .as_ref()
             .expect("Language not available for this command")
+    }
+
+    pub fn get_directory(&self) -> &String {
+        self.directory
+            .as_ref()
+            .expect("Directory not available for this command")
     }
 
     pub fn get_fields(&self) -> Option<&Vec<String>> {

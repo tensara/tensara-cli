@@ -261,6 +261,37 @@ pub fn parse_args(args: Option<Vec<&str>>) -> Result<ArgMatches, clap::Error> {
                             .help("Provide authentication token directly")
                             .required(false),
                     ),
+            )
+            .subcommand(
+                Command::new("init")
+                    .about("Initialize a file with starter code for a problem.")
+                    .arg(
+                        Arg::new("directory")
+                            .short('d')
+                            .long("directory")
+                            .value_name("DIRECTORY")
+                            .help("Directory where you want to initialize the file.")
+                            .default_value(".")
+                            .required(false),
+                    )
+                    .arg(
+                        Arg::new("problem_name")
+                            .short('p')
+                            .long("problem")
+                            .value_name("PROBLEM_NAME")
+                            .help("Name of the problem to test")
+                            .required(true)
+                            .value_parser(ProblemNameParser),
+                    )
+                    .arg(
+                        Arg::new("language")
+                            .short('l')
+                            .long("language")
+                            .value_name("LANGUAGE")
+                            .help("Solution file language")
+                            .default_value("cuda")
+                            .required(false)
+                    )
             );
 
     if let Some(args) = args {
@@ -292,6 +323,10 @@ pub fn get_benchmark_matches(matches: &ArgMatches) -> &ArgMatches {
 
 pub fn get_auth_matches(matches: &ArgMatches) -> &ArgMatches {
     matches.subcommand_matches("auth").unwrap()
+}
+
+pub fn get_init_matches(matches: &ArgMatches) -> &ArgMatches {
+    matches.subcommand_matches("init").unwrap()
 }
 
 pub fn get_submit_matches(matches: &ArgMatches) -> &ArgMatches {

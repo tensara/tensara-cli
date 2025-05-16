@@ -1,4 +1,9 @@
+use crate::trpc::get_problem_by_slug;
 use crate::trpc::ProblemParameter;
+use std::fs::{self, File};
+use std::io::Write;
+use std::path::Path;
+
 /*
 * Generate starter code from ProblemParameter
 */
@@ -112,5 +117,83 @@ pub fn validate_code(code: &str, language: &str) -> Result<(), String> {
 }
 
 /*
+* Generates a comment block for the given problem description
+*/
+
+pub fn generate_comment_block(description: &str, language: &str) -> String {
+    let comment_prefix = match language {
+        "cuda" => "// ",
+        "python" => "# ",
+        _ => "// ",
+    };
+
+    let lines = description.lines();
+
+    let mut result = String::new();
+    result.push_str(&format!(
+        "{}{}\n",
+        comment_prefix.trim(),
+        "Problem Description"
+    ));
+
+    for line in lines {
+        // can add logic to format markdown headers
+        if line.trim().is_empty() {
+            result.push_str(&format!("{}\n", comment_prefix));
+        } else {
+            result.push_str(&format!("{}{}\n", comment_prefix, line));
+        }
+    }
+
+    result
+}
+
+pub fn write_problem_markdown_file(path: &Path, description: &str) -> std::io::Result<()> {
+    let md_path = path.join("PROBLEM.md");
+    fs::write(md_path, description)
+}
+
+/*
 * TODO Create sol.cu with input string in the given directory
 */
+
+pub fn init(
+    path: &Path,
+    language: &str,
+    problem_slug: &str,
+) -> Result<(), Box<dyn std::error::Error>> {
+    if !path.exists() {
+        fs::create_dir_all(path)?;
+    }
+
+    let result = get_problem_by_slug(problem_slug)?;
+    let description = result.description.unwrap_or_default();
+    let parameters = result.parameters.unwrap_or_default();
+
+    let data_type = "float16";
+
+    write_problem_markdown_file(path, &description)?;
+
+    let comment_block = generate_comment_block(&description, language);
+    let starter_code = generate_starter_code(&parameters, language, data_type);
+
+    let full_code = format!("{comment_block}\n\n{starter_code}");
+
+    let file_name = match language {
+        "cuda" => "sol.cu",
+        "python" => "sol.py",
+        _ => "sol.txt",
+    };
+
+    let file_path = path.join(file_name);
+    let mut file = File::create(file_path)?;
+    file.write_all(full_code.as_bytes())?;
+
+    println!(
+        "✅ Generated starter code and description for problem `{}`",
+        problem_slug
+    );
+    println!("📁 Directory: {}", path.display());
+
+    Ok(())
+}

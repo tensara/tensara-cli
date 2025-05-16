@@ -2,10 +2,9 @@ use dotenv::dotenv;
 use tensara::{
     auth::AuthInfo,
     client,
+    init::init,
     pretty::{self, pretty_print_problems},
     Parameters,
-    init::generate_starter_code,
-    trpc::get_problem_by_slug,
 };
 
 const COMPILED_CHECKER_ENDPOINT: &str = env!("COMPILED_CHECKER_ENDPOINT");
@@ -13,19 +12,8 @@ const COMPILED_BENCHMARK_ENDPOINT: &str = env!("COMPILED_BENCHMARK_ENDPOINT");
 const COMPILED_SUBMIT_ENDPOINT: &str = env!("COMPILED_SUBMIT_ENDPOINT");
 
 fn main() {
-
-    // let result = get_problem_by_slug("vector-addition");
-    // assert!(result.is_ok());
-    // let details = result.unwrap();
-    // let params = details.parameters.unwrap_or_default();
-    // let language = "cuda";
-    // let data_type = "float16";
-    // let starter_code = generate_starter_code(&params, language, data_type);
-    // println!("{}", starter_code);
-
-
-
-
+    // let path = std::path::Path::new("vector-addition");
+    // init(path, "cuda", "vector-addition").unwrap();
 
     #[cfg(debug_assertions)]
     dotenv().ok();
@@ -42,6 +30,9 @@ fn main() {
         }
         "auth" => {
             execute_auth_command(&parameters);
+        }
+        "init" => {
+            execute_init_command(&parameters);
         }
         _ => unreachable!("Invalid command type"),
     }
@@ -116,6 +107,16 @@ fn execute_auth_command(parameters: &Parameters) {
     let token = parameters.get_token();
     let auth_info = AuthInfo::new(token.unwrap().to_string(), "Tensara".to_string());
     auth_info.save();
+}
+
+fn execute_init_command(parameters: &Parameters) {
+    let dir = parameters.get_directory();
+    let slug = parameters.get_problem_slug();
+    let language = parameters.get_language();
+
+    let path = std::path::Path::new(dir);
+
+    init(path, language, slug).unwrap();
 }
 
 #[cfg(test)]
