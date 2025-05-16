@@ -4,6 +4,7 @@ pub mod parser;
 pub mod pretty;
 pub mod trpc;
 pub mod problems;
+pub mod init;
 use clap::ArgMatches;
 
 pub enum CommandType {
