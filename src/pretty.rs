@@ -6,6 +6,7 @@ use serde::Deserialize;
 use serde_json::Value;
 use std::io::Read;
 use std::io::{BufRead, BufReader};
+use std::thread;
 use std::time::Duration;
 
 pub fn pretty_print_problems(parameters: &Parameters) {
@@ -405,7 +406,6 @@ pub fn pretty_print_auth() {
     println!("You're ready to run commands like `tensara submit` or `tensara benchmark`.\n");
 }
 
-
 pub fn pretty_print_submit_response(response: impl Read) {
     let multi_progress = MultiProgress::new();
 
@@ -492,7 +492,10 @@ pub fn pretty_print_submit_response(response: impl Read) {
             }
             Some("ERROR") => {
                 if let Ok(data) = serde_json::from_str::<ErrorData>(json_data) {
-                    let msg = data.error.or(data.message).unwrap_or_else(|| "Unknown error".to_string());
+                    let msg = data
+                        .error
+                        .or(data.message)
+                        .unwrap_or_else(|| "Unknown error".to_string());
                     spinner.abandon_with_message(format!("❌ Error: {msg}"));
                 } else {
                     spinner.abandon_with_message("❌ Unknown error");
@@ -507,122 +510,13 @@ pub fn pretty_print_submit_response(response: impl Read) {
     }
 }
 
+// use std::io::Read;
+//
+// use std::time::Duration;
 
-// pub fn pretty_print_submit_response(mut response: impl Read) {
-//     let multi_progress = MultiProgress::new();
-
-//     let spinner = multi_progress.add(ProgressBar::new_spinner());
-//     spinner.set_style(
-//         ProgressStyle::default_spinner()
-//             .template("{spinner:.green} {prefix:.bold.dim} {wide_msg}")
-//             .unwrap()
-//             .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"),
-//     );
-//     spinner.set_prefix("Processing");
-
-//     let progress_bar = multi_progress.add(ProgressBar::new(0));
-//     progress_bar.set_style(
-//         ProgressStyle::default_bar()
-//             .template("{prefix:.bold.white} [{bar:40.green/blue}] {pos}/{len} {msg}")
-//             .unwrap()
-//             .progress_chars("█▓▒░  "),
-//     );
-//     progress_bar.set_prefix("Tests");
-
-//     let reader = BufReader::new(response);
-
-//     let mut current_event: Option<String> = None;
-//     let mut passed_tests: u64 = 0;
-//     let mut total_tests: u64 = 0;
-
-//     for line in reader.lines() {
-//         spinner.tick(); // tick to animate spinner
-
-//         if let Ok(line) = line {
-//             println!("line: {}", line);
-//             if line.starts_with("event: ") {
-//                 current_event = Some(line[7..].trim().to_string());
-//                 continue;
-//             }
-
-//             if line.starts_with("data: ") {
-//                 let json_data = &line[6..]; // strip "data: "
-//                 if let Some(ref event_type) = current_event {
-//                     match event_type.as_str() {
-//                         "heartbeat" => {
-//                             spinner.set_message("⏳ Heartbeat...");
-//                         }
-//                         "IN_QUEUE" => {
-//                             spinner.set_message("🧘 In queue...");
-//                         }
-//                         "TEST_RESULT" => {
-//                             if let Ok(data) = serde_json::from_str::<TestResultData>(json_data) {
-//                                 if let Some(result) = data.result {
-//                                     total_tests += 1;
-//                                     if result.status == "PASSED" {
-//                                         passed_tests += 1;
-//                                     }
-//                                     progress_bar.set_length(total_tests);
-//                                     progress_bar.set_position(passed_tests);
-//                                     progress_bar.set_message(format!("✅ {} passed", passed_tests));
-//                                 }
-//                             }
-//                         }
-//                         "CHECKED" => {
-//                             if let Ok(data) = serde_json::from_str::<CheckedData>(json_data) {
-//                                 if let (Some(passed), Some(total)) =
-//                                     (data.passed_tests, data.total_tests)
-//                                 {
-//                                     passed_tests = passed as u64;
-//                                     total_tests = total as u64;
-//                                     progress_bar.set_length(total_tests);
-//                                     progress_bar.set_position(passed_tests);
-//                                     progress_bar.set_message(format!("✅ {} passed", passed_tests));
-//                                 }
-//                             }
-//                         }
-//                         "BENCHMARK_RESULT" => {
-//                             spinner.set_message("⚡ Benchmarking...");
-//                         }
-//                         "ACCEPTED" => {
-//                             if let Ok(data) = serde_json::from_str::<AcceptedData>(json_data) {
-//                                 multi_progress
-//                                     .println(format!(
-//                                         "✅ Avg runtime: {:.2} ms\n✅ Avg gflops: {:.2}",
-//                                         data.avg_runtime_ms.unwrap_or(0.0),
-//                                         data.avg_gflops.unwrap_or(0.0)
-//                                     ))
-//                                     .unwrap();
-//                             }
-//                             spinner.finish_with_message("🎉 Accepted!");
-//                             break;
-//                         }
-
-//                         "WRONG_ANSWER" => {
-//                             spinner.abandon_with_message("❌ Wrong Answer ❌");
-//                             break;
-//                         }
-//                         "ERROR" => {
-//                             if let Ok(data) = serde_json::from_str::<ErrorData>(json_data) {
-//                                 let msg = data
-//                                     .error
-//                                     .or(data.message)
-//                                     .unwrap_or_else(|| "Unknown error".to_string());
-//                                 spinner.abandon_with_message(format!("❌ Error: {}", msg));
-//                             } else {
-//                                 spinner.abandon_with_message("❌ Unknown error");
-//                             }
-//                             break;
-//                         }
-//                         other => {
-//                             spinner.set_message(format!("ℹ️ {other}"));
-//                         }
-//                     }
-//                 }
-//             }
-//         }
-//     }
-// }
+// use console::style;
+// use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
+// use serde_json::Value;
 
 pub fn pretty_print_benchmark_response(mut response: impl Read) {
     let multi_progress = MultiProgress::new();
@@ -637,261 +531,537 @@ pub fn pretty_print_benchmark_response(mut response: impl Read) {
         .unwrap()
         .progress_chars("█▓▒░  ");
 
-    let mut compilation_pb = multi_progress.add(ProgressBar::new_spinner());
-    compilation_pb.set_style(spinner_style.clone());
-    compilation_pb.set_prefix("🔧");
-    compilation_pb.enable_steady_tick(Duration::from_millis(80));
+    let spinner = multi_progress.add(ProgressBar::new_spinner());
+    spinner.set_style(spinner_style.clone());
+    spinner.set_prefix("🔧");
+    spinner.enable_steady_tick(Duration::from_millis(80));
 
-    let mut _total_benchmarks = 0;
-    let mut completed_benchmarks = 0;
-    let mut benchmark_progress: Option<ProgressBar> = None;
-    let mut benchmark_results: Vec<Value> = Vec::new();
-    let mut benchmark_names: Vec<String> = Vec::new();
+    let mut total_benchmarks = 0;
+    let mut completed = 0;
+    let mut progress_bar: Option<ProgressBar> = None;
     let mut buffer = [0; 1024];
     let mut data_buffer = String::new();
+    let mut benchmark_results = vec![];
 
     while let Ok(size) = response.read(&mut buffer) {
         if size == 0 {
             break;
         }
 
-        let chunk = String::from_utf8_lossy(&buffer[0..size]);
+        let chunk = String::from_utf8_lossy(&buffer[..size]);
         data_buffer.push_str(&chunk);
 
         while let Some(pos) = data_buffer.find('\n') {
             let line = data_buffer[..pos].trim().to_string();
-            let remaining = data_buffer[pos + 1..].to_string();
-            data_buffer = remaining;
+            data_buffer = data_buffer[pos + 1..].to_string();
 
             if line.starts_with("data: ") {
-                let json_str = &line["data: ".len()..];
+                let json_str = &line[6..];
                 if let Ok(json) = serde_json::from_str::<Value>(json_str) {
-                    match json["status"].as_str() {
-                        Some("COMPILING") => {
-                            compilation_pb.set_message("Compiling your code...".to_string());
-                        }
-                        Some("ERROR") => {
-                            compilation_pb.finish_with_message("Error detected!".to_string());
-                            compilation_pb.set_prefix("❌");
-
-                            compilation_pb.finish_and_clear();
-                            multi_progress.clear().unwrap();
-
-                            println!("\n{}", style("⚠️ ERROR OCCURRED ⚠️").red().bold());
-                            println!("{}", style("═".repeat(50)).dim());
-
-                            let error_message = json["error"].as_str().unwrap_or("Unknown error");
-                            println!("{}: {}", style("Error").red().bold(), error_message);
-
-                            if let Some(details) = json["details"].as_str() {
-                                println!("\n{}", style("Details:").yellow().bold());
-                                println!("{}", style("─".repeat(50)).dim());
-
-                                let formatted_details = details
-                                    .lines()
-                                    .map(|line| {
-                                        if line.contains("error:") {
-                                            format!("{}", style(line).red())
-                                        } else if line.contains("warning:") {
-                                            format!("{}", style(line).yellow())
-                                        } else if line.contains("^") {
-                                            format!("{}", style(line).cyan())
-                                        } else {
-                                            line.to_string()
-                                        }
-                                    })
-                                    .collect::<Vec<String>>()
-                                    .join("\n");
-
-                                println!("{}", formatted_details);
-                            }
-
-                            println!("{}", style("═".repeat(50)).dim());
-                            println!(
-                                "{}",
-                                style("Please fix the errors and try again.")
-                                    .yellow()
-                                    .bold()
-                            );
-
-                            return;
-                        }
-                        Some("SANITY_CHECK") => {
-                            compilation_pb.set_message("Sanity check passed!".to_string());
-                            compilation_pb.set_prefix("✅");
-                        }
-                        Some("BENCHMARKING") => {
-                            compilation_pb
-                                .finish_with_message("Compilation successful!".to_string());
-                            compilation_pb.set_prefix("✅");
-
-                            let running_pb = multi_progress.add(ProgressBar::new_spinner());
-                            running_pb.set_style(spinner_style.clone());
-                            running_pb.set_prefix("🚀");
-                            running_pb.set_message("Running benchmarks...".to_string());
-                            running_pb.enable_steady_tick(Duration::from_millis(80));
-
-                            compilation_pb = running_pb;
-                        }
-                        Some("BENCHMARK_RESULT") => {
-                            if benchmark_progress.is_none() && json["totalTests"].is_number() {
-                                _total_benchmarks =
-                                    json["totalTests"].as_u64().unwrap_or(0) as usize;
-
-                                if compilation_pb.is_finished() {
-                                    compilation_pb.finish();
+                    if let Some(status) = json.get("status").and_then(|s| s.as_str()) {
+                        match status {
+                            "COMPILING" => spinner.set_message("Compiling your code..."),
+                            "BENCHMARKING" => spinner.set_message("Running benchmarks..."),
+                            "BENCHMARK_RESULT" => {
+                                if total_benchmarks == 0 {
+                                    total_benchmarks = json["total_tests"].as_u64().unwrap_or(0);
+                                    let pb = multi_progress.add(ProgressBar::new(total_benchmarks));
+                                    pb.set_style(progress_style.clone());
+                                    pb.set_prefix("📊 Benchmarks");
+                                    progress_bar = Some(pb);
                                 }
 
-                                let progress =
-                                    multi_progress.add(ProgressBar::new(_total_benchmarks as u64));
-                                progress.set_style(progress_style.clone());
-                                progress.set_prefix("📊 Benchmarks");
-                                benchmark_progress = Some(progress);
-                            }
+                                if let Some(result) = json.get("result") {
+                                    benchmark_results.push(result.clone());
+                                    completed += 1;
 
-                            if let Some(result) = &json["result"].as_object() {
-                                let test_name = result["name"].as_str().unwrap_or("Benchmark");
-                                benchmark_names.push(test_name.to_string());
+                                    if let Some(pb) = &progress_bar {
+                                        let name = result["name"].as_str().unwrap_or("Unnamed");
+                                        let gflops = result["gflops"].as_f64().unwrap_or(0.0);
+                                        let runtime = result["runtime_ms"].as_f64().unwrap_or(0.0);
 
-                                let gflops = result["gflops"].as_f64().unwrap_or(0.0);
-                                let runtime = result["runtime_ms"].as_f64().unwrap_or(0.0);
-                                let status = result["status"].as_str().unwrap_or("UNKNOWN");
-
-                                benchmark_results.push(json["result"].clone());
-
-                                completed_benchmarks += 1;
-                                if let Some(ref progress) = benchmark_progress {
-                                    let status_symbol =
-                                        if status == "PASSED" { "✅" } else { "❌" };
-                                    progress.set_position(completed_benchmarks as u64);
-                                    progress.set_message(format!(
-                                        "{} {:.2} GFLOPS ({:.2} ms)",
-                                        status_symbol, gflops, runtime
-                                    ));
+                                        pb.set_position(completed);
+                                        pb.set_message(format!(
+                                            "{}: {:.2} GFLOPS ({:.2} ms)",
+                                            name, gflops, runtime
+                                        ));
+                                    }
                                 }
                             }
+                            _ => {}
                         }
-                        Some("ACCEPTED") => {
-                            if let Some(progress) = benchmark_progress.take() {
-                                progress.finish_and_clear();
-                            }
-                            compilation_pb.finish_and_clear();
+                    } else if json.get("avg_gflops").is_some()
+                        && json.get("avg_runtime_ms").is_some()
+                        && json.get("benchmark_results").is_some()
+                    {
+                        if let Some(pb) = progress_bar.take() {
+                            pb.finish();
+                        }
+                        spinner.finish();
+                        multi_progress.clear().unwrap();
+                        thread::sleep(Duration::from_millis(100));
 
-                            multi_progress.clear().unwrap();
-                            std::thread::sleep(Duration::from_millis(500));
+                        let avg_gflops = json["avg_gflops"].as_f64().unwrap_or(0.0);
+                        let avg_runtime = json["avg_runtime_ms"].as_f64().unwrap_or(0.0);
+                        let empty = vec![];
+                        let results = json["benchmark_results"].as_array().unwrap_or(&empty);
 
-                            // Get values from the updated JSON format
-                            let avg_gflops = json["average_gflops"].as_f64().unwrap_or(0.0);
-                            let avg_runtime = json["runtime_ms"].as_f64().unwrap_or(0.0);
-                            let total = json["total_tests"].as_u64().unwrap_or(0);
+                        println!("{}", style("BENCHMARK RESULTS ").green().bold());
+                        println!("{}", style("═".repeat(65)).dim());
+                        println!(
+                            "{:<25} {:>15}",
+                            style("Metric").bold(),
+                            style("Value").bold()
+                        );
+                        println!("{}", style("─".repeat(65)).dim());
+                        println!("{:<25} {:>15}", "Total Benchmarks:", results.len());
+                        println!("{:<25} {:>15.2}", "Average GFLOPS:", avg_gflops);
+                        println!("{:<25} {:>15.2} ms", "Average Runtime:", avg_runtime);
+                        println!("{}", style("═".repeat(65)).dim());
 
-                            println!("{}", style("✨ BENCHMARK RESULTS ✨").green().bold());
-                            println!("{}", style("═".repeat(65)).dim());
+                        println!("\n{}", style("Detailed Results:").bold().underlined());
+                        println!(
+                            "{:<30} {:>10} {:>15} {:>15}",
+                            style("Test Case").bold(),
+                            style("GFLOPS").bold(),
+                            style("Runtime (ms)").bold(),
+                            style("Status").bold()
+                        );
+                        println!("{}", style("─".repeat(75)).dim());
+
+                        for (i, result) in results.iter().enumerate() {
+                            let name = result["name"].as_str().unwrap_or("Unnamed");
+                            let gflops = result["gflops"].as_f64().unwrap_or(0.0);
+                            let runtime = result["runtime_ms"].as_f64().unwrap_or(0.0);
+
                             println!(
-                                "{:<25} {:>15}",
-                                style("Metric").bold(),
-                                style("Value").bold(),
-                            );
-                            println!("{}", style("─".repeat(65)).dim());
-                            println!("{:<25} {:>15}", "Total Benchmarks:", total);
-                            println!("{:<25} {:>15.2}", "Average GFLOPS:", avg_gflops);
-                            println!("{:<25} {:>15.2} ms", "Average Runtime:", avg_runtime);
-                            println!("{}", style("═".repeat(65)).dim());
-
-                            println!("\n{}", style("Detailed Results:\n").bold().underlined());
-                            println!(
-                                "{:<30} {:>10} {:>15} {:>15}",
-                                style("Test Case").bold(),
-                                style("GFLOPS").bold(),
-                                style("Runtime (ms)").bold(),
-                                style("Status").bold()
-                            );
-                            println!("{}", style("─".repeat(75)).dim());
-
-                            for (i, result) in benchmark_results.iter().enumerate() {
-                                let gflops = result["gflops"].as_f64().unwrap_or(0.0);
-                                let runtime = result["runtime_ms"].as_f64().unwrap_or(0.0);
-                                let status = result["status"].as_str().unwrap_or("UNKNOWN");
-                                let name = benchmark_names.get(i).unwrap();
-
-                                let status_indicator = if status == "PASSED" {
-                                    style("✓").green().bold()
-                                } else {
-                                    style("✗").red().bold()
-                                };
-
-                                println!(
-                                    "{} {:<3} {:<24} {:>10.2} {:>15.4} {:>15}",
-                                    status_indicator,
-                                    i + 1,
-                                    name,
-                                    gflops,
-                                    runtime,
-                                    status
-                                );
-                            }
-
-                            // For the performance graph
-                            if !benchmark_results.is_empty() {
-                                println!(
-                                    "\n{}",
-                                    style("Performance Graph (GFLOPS):").bold().underlined()
-                                );
-                                println!("{}", style("─".repeat(75)).dim());
-
-                                let max_gflops = benchmark_results
-                                    .iter()
-                                    .filter_map(|r| r["gflops"].as_f64())
-                                    .fold(0.0, |max, val| if val > max { val } else { max });
-
-                                let graph_width = 40;
-
-                                // Find the maximum name length for proper alignment
-                                let max_name_length = benchmark_names
-                                    .iter()
-                                    .map(|name| name.len())
-                                    .max()
-                                    .unwrap_or(15);
-
-                                // Pad all names to the same length
-                                let padded_name_length = max_name_length + 2; // Add some extra space
-
-                                for (i, result) in benchmark_results.iter().enumerate() {
-                                    let gflops = result["gflops"].as_f64().unwrap_or(0.0);
-                                    let name = benchmark_names.get(i).unwrap();
-                                    let bar_length =
-                                        ((gflops / max_gflops) * graph_width as f64) as usize;
-
-                                    // Format with consistent padding
-                                    let label = format!(
-                                        "{:<width$} ({:.2}) ",
-                                        name,
-                                        gflops,
-                                        width = padded_name_length
-                                    );
-
-                                    let bar = "█".repeat(bar_length);
-                                    let styled_bar = style(bar).green();
-
-                                    println!("{} {}", label, styled_bar);
-                                }
-                            }
-
-                            println!("\n{}", style("═".repeat(65)).dim());
-                            println!(
-                                "{}",
-                                style("🏁 Benchmark completed successfully! 🏁")
-                                    .green()
-                                    .bold()
+                                "{} {:<3} {:<24} {:>10.2} {:>15.4} {:>15}",
+                                style("✓").green().bold(),
+                                i + 1,
+                                name,
+                                gflops,
+                                runtime,
+                                "PASSED"
                             );
                         }
-                        _ => {} // Catch-all for other status types
+
+                        println!(
+                            "\n{}",
+                            style("🏁 Benchmark completed successfully! 🏁")
+                                .green()
+                                .bold()
+                        );
                     }
                 }
             }
         }
     }
 }
+
+// pub fn pretty_print_benchmark_response(mut response: impl Read) {
+//     let multi_progress = MultiProgress::new();
+
+//     let spinner_style = ProgressStyle::default_spinner()
+//         .template("{spinner:.green} {prefix:.bold.dim} {wide_msg}")
+//         .unwrap()
+//         .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏");
+
+//     let progress_style = ProgressStyle::default_bar()
+//         .template("{prefix:.bold.blue} [{bar:40.blue/cyan}] {pos}/{len} {msg}")
+//         .unwrap()
+//         .progress_chars("█▓▒░  ");
+
+//     let mut compilation_pb = multi_progress.add(ProgressBar::new_spinner());
+//     compilation_pb.set_style(spinner_style.clone());
+//     compilation_pb.set_prefix("🔧");
+//     compilation_pb.enable_steady_tick(Duration::from_millis(80));
+
+//     let mut _total_benchmarks = 0;
+//     let mut completed_benchmarks = 0;
+//     let mut benchmark_progress: Option<ProgressBar> = None;
+//     let mut benchmark_results: Vec<Value> = Vec::new();
+//     let mut benchmark_names: Vec<String> = Vec::new();
+//     let mut buffer = [0; 1024];
+//     let mut data_buffer = String::new();
+
+//     while let Ok(size) = response.read(&mut buffer) {
+//         if size == 0 {
+//             break;
+//         }
+
+//         let chunk = String::from_utf8_lossy(&buffer[0..size]);
+//         data_buffer.push_str(&chunk);
+
+//         while let Some(pos) = data_buffer.find('\n') {
+//             let line = data_buffer[..pos].trim().to_string();
+//             let remaining = data_buffer[pos + 1..].to_string();
+//             data_buffer = remaining;
+
+//             if line.starts_with("data: ") {
+//                 let json_str = &line["data: ".len()..];
+//                 if let Ok(json) = serde_json::from_str::<Value>(json_str) {
+//                     println!("json: {}", json);
+//                     match json["status"].as_str() {
+//                         Some("COMPILING") => {
+//                             compilation_pb.set_message("Compiling your code...".to_string());
+//                         }
+//                         Some("ERROR") => {
+//                             compilation_pb.finish_with_message("Error detected!".to_string());
+//                             compilation_pb.set_prefix("❌");
+
+//                             compilation_pb.finish_and_clear();
+//                             multi_progress.clear().unwrap();
+
+//                             println!("\n{}", style("⚠️ ERROR OCCURRED ⚠️").red().bold());
+//                             println!("{}", style("═".repeat(50)).dim());
+
+//                             let error_message = json["error"].as_str().unwrap_or("Unknown error");
+//                             println!("{}: {}", style("Error").red().bold(), error_message);
+
+//                             if let Some(details) = json["details"].as_str() {
+//                                 println!("\n{}", style("Details:").yellow().bold());
+//                                 println!("{}", style("─".repeat(50)).dim());
+
+//                                 let formatted_details = details
+//                                     .lines()
+//                                     .map(|line| {
+//                                         if line.contains("error:") {
+//                                             format!("{}", style(line).red())
+//                                         } else if line.contains("warning:") {
+//                                             format!("{}", style(line).yellow())
+//                                         } else if line.contains("^") {
+//                                             format!("{}", style(line).cyan())
+//                                         } else {
+//                                             line.to_string()
+//                                         }
+//                                     })
+//                                     .collect::<Vec<String>>()
+//                                     .join("\n");
+
+//                                 println!("{}", formatted_details);
+//                             }
+
+//                             println!("{}", style("═".repeat(50)).dim());
+//                             println!(
+//                                 "{}",
+//                                 style("Please fix the errors and try again.")
+//                                     .yellow()
+//                                     .bold()
+//                             );
+
+//                             return;
+//                         }
+//                         Some("SANITY_CHECK") => {
+//                             compilation_pb.set_message("Sanity check passed!".to_string());
+//                             compilation_pb.set_prefix("✅");
+//                         }
+//                         Some("BENCHMARKING") => {
+//                             compilation_pb
+//                                 .finish_with_message("Compilation successful!".to_string());
+//                             compilation_pb.set_prefix("✅");
+
+//                             let running_pb = multi_progress.add(ProgressBar::new_spinner());
+//                             running_pb.set_style(spinner_style.clone());
+//                             running_pb.set_prefix("🚀");
+//                             running_pb.set_message("Running benchmarks...".to_string());
+//                             running_pb.enable_steady_tick(Duration::from_millis(80));
+
+//                             compilation_pb = running_pb;
+//                         }
+//                         Some("BENCHMARK_RESULT") => {
+//                             if benchmark_progress.is_none() && json["total_tests"].is_number() {
+//                                 _total_benchmarks =
+//                                     json["total_tests"].as_u64().unwrap_or(0) as usize;
+
+//                                 if compilation_pb.is_finished() {
+//                                     compilation_pb.finish();
+//                                 }
+
+//                                 let progress =
+//                                     multi_progress.add(ProgressBar::new(_total_benchmarks as u64));
+//                                 progress.set_style(progress_style.clone());
+//                                 progress.set_prefix("📊 Benchmarks");
+//                                 benchmark_progress = Some(progress);
+//                             }
+
+//                             // println!("Benchmark result: {}", json);
+
+//                             if let Some(result) = &json["result"].as_object() {
+//                                 //print result fordebugging
+//                                 // println!("{:?}", result);
+//                                 let test_name = result["name"].as_str().unwrap_or("Benchmark");
+//                                 benchmark_names.push(test_name.to_string());
+
+//                                 let gflops = result["gflops"].as_f64().unwrap_or(0.0);
+//                                 let runtime = result["runtime_ms"].as_f64().unwrap_or(0.0);
+//                                 // let status = result["status"].as_str().unwrap_or("UNKNOWN");
+//                                 let status = result
+//                                     .get("status")
+//                                     .and_then(|s| s.as_str())
+//                                     .unwrap_or("UNKNOWN");
+
+//                                 benchmark_results.push(json["result"].clone());
+
+//                                 completed_benchmarks += 1;
+//                                 if let Some(ref progress) = benchmark_progress {
+//                                     let status_symbol =
+//                                         if status == "PASSED" { "✅" } else { "❌" };
+//                                     progress.set_position(completed_benchmarks as u64);
+//                                     progress.set_message(format!(
+//                                         "{} {:.2} GFLOPS ({:.2} ms)",
+//                                         status_symbol, gflops, runtime
+//                                     ));
+//                                 }
+//                             }
+//                         }
+//                         // Some("ACCEPTED") => {
+//                         //     // if let Some(progress) = benchmark_progress.take() {
+//                         //     //     progress.finish_and_clear();
+//                         //     // }
+//                         //     // compilation_pb.finish_and_clear();
+//                         //     // multi_progress.clear().unwrap();
+//                         //     if let Some(progress) = benchmark_progress.take() {
+//                         //         progress.finish();
+//                         //     }
+//                         //     compilation_pb.finish();
+//                         //     println!("\n{}", style("═".repeat(65)).dim());
+//                         //     println!(
+//                         //         "{}",
+//                         //         style("🏁 Benchmark completed successfully! 🏁")
+//                         //             .green()
+//                         //             .bold()
+//                         //     );
+
+//                         //     multi_progress.clear().unwrap();
+
+//                         //     std::thread::sleep(Duration::from_millis(500));
+
+//                         //     // Get values from the updated JSON format
+//                         //     let avg_gflops = json["average_gflops"].as_f64().unwrap_or(0.0);
+//                         //     let avg_runtime = json["runtime_ms"].as_f64().unwrap_or(0.0);
+//                         //     let total = json["total_tests"].as_u64().unwrap_or(0);
+
+//                         //     println!("{}", style("✨ BENCHMARK RESULTS ✨").green().bold());
+//                         //     println!("{}", style("═".repeat(65)).dim());
+//                         //     println!(
+//                         //         "{:<25} {:>15}",
+//                         //         style("Metric").bold(),
+//                         //         style("Value").bold(),
+//                         //     );
+//                         //     println!("{}", style("─".repeat(65)).dim());
+//                         //     println!("{:<25} {:>15}", "Total Benchmarks:", total);
+//                         //     println!("{:<25} {:>15.2}", "Average GFLOPS:", avg_gflops);
+//                         //     println!("{:<25} {:>15.2} ms", "Average Runtime:", avg_runtime);
+//                         //     println!("{}", style("═".repeat(65)).dim());
+
+//                         //     println!("\n{}", style("Detailed Results:\n").bold().underlined());
+//                         //     println!(
+//                         //         "{:<30} {:>10} {:>15} {:>15}",
+//                         //         style("Test Case").bold(),
+//                         //         style("GFLOPS").bold(),
+//                         //         style("Runtime (ms)").bold(),
+//                         //         style("Status").bold()
+//                         //     );
+//                         //     println!("{}", style("─".repeat(75)).dim());
+
+//                         //     for (i, result) in benchmark_results.iter().enumerate() {
+//                         //         let gflops = result["gflops"].as_f64().unwrap_or(0.0);
+//                         //         let runtime = result["runtime_ms"].as_f64().unwrap_or(0.0);
+//                         //         // let status = result["status"].as_str().unwrap_or("UNKNOWN");
+//                         //         let status = result
+//                         //             .get("status")
+//                         //             .and_then(|s| s.as_str())
+//                         //             .unwrap_or("UNKNOWN");
+
+//                         //         let name = benchmark_names.get(i).unwrap();
+
+//                         //         let status_indicator = if status == "PASSED" {
+//                         //             style("✓").green().bold()
+//                         //         } else {
+//                         //             style("✗").red().bold()
+//                         //         };
+
+//                         //         println!(
+//                         //             "{} {:<3} {:<24} {:>10.2} {:>15.4} {:>15}",
+//                         //             status_indicator,
+//                         //             i + 1,
+//                         //             name,
+//                         //             gflops,
+//                         //             runtime,
+//                         //             status
+//                         //         );
+//                         //     }
+
+//                         //     // For the performance graph
+//                         //     if !benchmark_results.is_empty() {
+//                         //         println!(
+//                         //             "\n{}",
+//                         //             style("Performance Graph (GFLOPS):").bold().underlined()
+//                         //         );
+//                         //         println!("{}", style("─".repeat(75)).dim());
+
+//                         //         let max_gflops = benchmark_results
+//                         //             .iter()
+//                         //             .filter_map(|r| r["gflops"].as_f64())
+//                         //             .fold(0.0, |max, val| if val > max { val } else { max });
+
+//                         //         let graph_width = 40;
+
+//                         //         // Find the maximum name length for proper alignment
+//                         //         let max_name_length = benchmark_names
+//                         //             .iter()
+//                         //             .map(|name| name.len())
+//                         //             .max()
+//                         //             .unwrap_or(15);
+
+//                         //         // Pad all names to the same length
+//                         //         let padded_name_length = max_name_length + 2; // Add some extra space
+
+//                         //         for (i, result) in benchmark_results.iter().enumerate() {
+//                         //             let gflops = result["gflops"].as_f64().unwrap_or(0.0);
+//                         //             let name = benchmark_names.get(i).unwrap();
+//                         //             let bar_length =
+//                         //                 ((gflops / max_gflops) * graph_width as f64) as usize;
+
+//                         //             // Format with consistent padding
+//                         //             let label = format!(
+//                         //                 "{:<width$} ({:.2}) ",
+//                         //                 name,
+//                         //                 gflops,
+//                         //                 width = padded_name_length
+//                         //             );
+
+//                         //             let bar = "█".repeat(bar_length);
+//                         //             let styled_bar = style(bar).green();
+
+//                         //             println!("{} {}", label, styled_bar);
+//                         //         }
+//                         //     }
+
+//                         //     println!("\n{}", style("═".repeat(65)).dim());
+//                         //     println!(
+//                         //         "{}",
+//                         //         style("🏁 Benchmark completed successfully! 🏁")
+//                         //             .green()
+//                         //             .bold()
+//                         //     );
+//                         // }
+//                         Some("ACCEPTED") => {
+//                             if let Some(progress) = benchmark_progress.take() {
+//                                 progress.finish();
+//                             }
+//                             compilation_pb.finish();
+
+//                             multi_progress.clear().unwrap();
+//                             std::thread::sleep(Duration::from_millis(200));
+
+//                             let avg_gflops = json["avg_gflops"].as_f64().unwrap_or(0.0);
+//                             let avg_runtime = json["avg_runtime_ms"].as_f64().unwrap_or(0.0);
+//                             let total = json["total_tests"].as_u64().unwrap_or(0);
+
+//                             // let benchmark_results_json =
+//                             //     json["benchmark_results"].as_array().unwrap_or(&vec![]);
+//                             let empty_array = Vec::new();
+//                             let benchmark_results_json =
+//                                 json["benchmark_results"].as_array().unwrap_or(&empty_array);
+
+//                             println!("{}", style("✨ BENCHMARK RESULTS ✨").green().bold());
+//                             println!("{}", style("═".repeat(65)).dim());
+//                             println!(
+//                                 "{:<25} {:>15}",
+//                                 style("Metric").bold(),
+//                                 style("Value").bold()
+//                             );
+//                             println!("{}", style("─".repeat(65)).dim());
+//                             println!("{:<25} {:>15}", "Total Benchmarks:", total);
+//                             println!("{:<25} {:>15.2}", "Average GFLOPS:", avg_gflops);
+//                             println!("{:<25} {:>15.2} ms", "Average Runtime:", avg_runtime);
+//                             println!("{}", style("═".repeat(65)).dim());
+
+//                             println!("\n{}", style("Detailed Results:\n").bold().underlined());
+//                             println!(
+//                                 "{:<30} {:>10} {:>15} {:>15}",
+//                                 style("Test Case").bold(),
+//                                 style("GFLOPS").bold(),
+//                                 style("Runtime (ms)").bold(),
+//                                 style("Status").bold()
+//                             );
+//                             println!("{}", style("─".repeat(75)).dim());
+
+//                             for (i, bench) in benchmark_results_json.iter().enumerate() {
+//                                 let result = &bench["result"];
+//                                 let name = result["name"].as_str().unwrap_or("Unnamed");
+//                                 let gflops = result["gflops"].as_f64().unwrap_or(0.0);
+//                                 let runtime = result["runtime_ms"].as_f64().unwrap_or(0.0);
+
+//                                 let status_indicator = style("✓").green().bold(); // or hardcode "PASSED" here
+
+//                                 println!(
+//                                     "{} {:<3} {:<24} {:>10.2} {:>15.4} {:>15}",
+//                                     status_indicator,
+//                                     i + 1,
+//                                     name,
+//                                     gflops,
+//                                     runtime,
+//                                     "PASSED"
+//                                 );
+//                             }
+
+//                             // Optional: performance graph
+//                             println!(
+//                                 "\n{}",
+//                                 style("Performance Graph (GFLOPS):").bold().underlined()
+//                             );
+//                             println!("{}", style("─".repeat(75)).dim());
+
+//                             let max_gflops = benchmark_results_json
+//                                 .iter()
+//                                 .filter_map(|r| r["result"]["gflops"].as_f64())
+//                                 .fold(0.0_f64, |max, val| max.max(val));
+
+//                             // .fold(0.0, |max, val| max.max(val));
+
+//                             let graph_width = 40;
+
+//                             let max_name_len = benchmark_results_json
+//                                 .iter()
+//                                 .filter_map(|r| r["result"]["name"].as_str())
+//                                 .map(|s| s.len())
+//                                 .max()
+//                                 .unwrap_or(15);
+
+//                             for bench in benchmark_results_json {
+//                                 let result = &bench["result"];
+//                                 let name = result["name"].as_str().unwrap_or("Unnamed");
+//                                 let gflops = result["gflops"].as_f64().unwrap_or(0.0);
+//                                 let bar_len = ((gflops / max_gflops) * graph_width as f64) as usize;
+//                                 let bar = style("█".repeat(bar_len)).green();
+
+//                                 let label = format!(
+//                                     "{:<width$} ({:.2})",
+//                                     name,
+//                                     gflops,
+//                                     width = max_name_len + 2
+//                                 );
+//                                 println!("{} {}", label, bar);
+//                             }
+
+//                             println!("\n{}", style("═".repeat(65)).dim());
+//                             println!(
+//                                 "{}",
+//                                 style("🏁 Benchmark completed successfully! 🏁")
+//                                     .green()
+//                                     .bold()
+//                             );
+//                         }
+
+//                         _ => {} // Catch-all for other status types
+//                     }
+//                 }
+//             }
+//         }
+//     }
+// }
 
 pub fn print_parse_error(error: &clap::Error) {
     match error.kind() {
@@ -1010,10 +1180,7 @@ fn print_invalid_file_error() {
 }
 
 fn print_missing_arg_error(error_message: &str) {
-    println!(
-        "\n{}",
-        style("⚠️ MISSING REQUIRED ARGUMENT ⚠️").red().bold()
-    );
+    println!("\n{}", style("⚠️ MISSING REQUIRED ARGUMENT ⚠️").red().bold());
     println!("{}", style("═".repeat(60)).dim());
     println!("{}", style(error_message).red());
 
