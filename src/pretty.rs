@@ -426,8 +426,8 @@ pub fn pretty_print_submit_response(response: impl Read) {
     progress_bar.set_prefix("📊 Tests");
 
     let reader = BufReader::new(response);
-
     let mut current_event: Option<String> = None;
+
     let mut passed_tests: u64 = 0;
     let mut total_tests: u64 = 0;
 
@@ -443,23 +443,34 @@ pub fn pretty_print_submit_response(response: impl Read) {
             continue;
         }
 
-        let json_data = &line[6..]; // strip "data: "
+        let json_data = &line[6..];
+
         match current_event.as_deref() {
             Some("heartbeat") => spinner.set_message("⏳ Heartbeat..."),
             Some("IN_QUEUE") => spinner.set_message("🧘 In queue..."),
+
             Some("TEST_RESULT") => {
+                if total_tests == 0 {
+                    if let Ok(value) = serde_json::from_str::<serde_json::Value>(json_data) {
+                        total_tests = value
+                            .get("total_tests")
+                            .and_then(|v| v.as_u64())
+                            .unwrap_or(0);
+                        progress_bar.set_length(total_tests);
+                    }
+                }
+
                 if let Ok(data) = serde_json::from_str::<TestResultData>(json_data) {
                     if let Some(result) = data.result {
-                        total_tests += 1;
                         if result.status == "PASSED" {
                             passed_tests += 1;
                         }
-                        progress_bar.set_length(total_tests);
                         progress_bar.set_position(passed_tests);
                         progress_bar.set_message(format!("✅ {passed_tests} passed"));
                     }
                 }
             }
+
             Some("CHECKED") => {
                 if let Ok(data) = serde_json::from_str::<CheckedData>(json_data) {
                     if let (Some(p), Some(t)) = (data.passed_tests, data.total_tests) {
@@ -471,7 +482,9 @@ pub fn pretty_print_submit_response(response: impl Read) {
                     }
                 }
             }
+
             Some("BENCHMARK_RESULT") => spinner.set_message("⚡ Benchmarking..."),
+
             Some("ACCEPTED") => {
                 if let Ok(data) = serde_json::from_str::<AcceptedData>(json_data) {
                     let avg_rt = data.avg_runtime_ms.unwrap_or(0.0);
@@ -486,10 +499,12 @@ pub fn pretty_print_submit_response(response: impl Read) {
                 spinner.finish_with_message("✅ Finished successfully!");
                 break;
             }
+
             Some("WRONG_ANSWER") => {
                 spinner.abandon_with_message("❌ Wrong Answer");
                 break;
             }
+
             Some("ERROR") => {
                 if let Ok(data) = serde_json::from_str::<ErrorData>(json_data) {
                     let msg = data
@@ -502,9 +517,8 @@ pub fn pretty_print_submit_response(response: impl Read) {
                 }
                 break;
             }
-            Some(other) => {
-                spinner.set_message(format!("ℹ️ {other}"));
-            }
+
+            Some(other) => spinner.set_message(format!("ℹ️ {other}")),
             None => {}
         }
     }
@@ -820,7 +834,6 @@ pub fn print_file_error(file_path: &str, error_message: &str) {
 }
 
 pub fn print_auth_error() {
-
     println!("\n{}", style("⚠️ AUTHENTICATION ERROR ⚠️").red().bold());
     println!("{}", style("═".repeat(60)).dim());
     println!(
@@ -829,11 +842,13 @@ pub fn print_auth_error() {
             .yellow()
             .bold()
     );
-    println!("{}", style("Check the status of your API keys here:").yellow().bold());
     println!(
         "{}",
-        style("https://tensara.org/cli").yellow()
+        style("Check the status of your API keys here:")
+            .yellow()
+            .bold()
     );
+    println!("{}", style("https://tensara.org/cli").yellow());
     println!("{}", style("═".repeat(60)).dim());
 }
 
