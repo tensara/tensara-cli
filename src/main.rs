@@ -12,8 +12,8 @@ const COMPILED_BENCHMARK_ENDPOINT: &str = env!("COMPILED_BENCHMARK_ENDPOINT");
 const COMPILED_SUBMIT_ENDPOINT: &str = env!("COMPILED_SUBMIT_ENDPOINT");
 
 fn main() {
-    // let path = std::path::Path::new("vector-addition");
-    // init(path, "cuda", "vector-addition").unwrap();
+
+    // print_auth_error();
 
     #[cfg(debug_assertions)]
     dotenv().ok();

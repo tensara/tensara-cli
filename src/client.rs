@@ -1,6 +1,7 @@
 use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
 use std::io::Read;
+use std::process::exit;
 
 use crate::auth::AuthInfo;
 
@@ -68,12 +69,18 @@ pub fn send_post_request_to_endpoint(
     );
     let request_json = serde_json::to_string(&request).unwrap();
     let client = Client::new();
-    client
+    let response = client
         .post(endpoint)
         .header("Content-Type", "application/json")
         .header("User-Agent", "tensara-cli")
         .header("Authorization", format!("Bearer {}", auth.access_token))
         .body(request_json)
         .send()
-        .expect("Failed to send request")
+        .expect("Failed to send request");
+
+    if response.status().as_u16() == 401 {
+        crate::pretty::print_auth_error();
+        exit(1);
+    }
+    response
 }
