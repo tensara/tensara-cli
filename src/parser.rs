@@ -267,7 +267,7 @@ pub fn parse_args(args: Option<Vec<&str>>) -> Result<ArgMatches, clap::Error> {
                     .about("Initialize a file with starter code for a problem.")
                     .arg(
                         Arg::new("directory")
-                            .help("Directory where you want to initialize the file.")
+                            .help("Directory where you want to initialize the file")
                             .value_name("DIRECTORY")
                             .required(false)
                             .index(1)  

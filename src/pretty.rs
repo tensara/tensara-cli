@@ -8,7 +8,6 @@ use std::io::Read;
 use std::io::{BufRead, BufReader};
 use std::thread;
 use std::time::Duration;
-// use std::vec::Splice;
 
 pub fn pretty_print_problems(parameters: &Parameters) {
     println!("Fetching problems...");
@@ -42,7 +41,7 @@ pub fn pretty_print_problems(parameters: &Parameters) {
             "{:<width$}",
             problem.slug.bold(),
             width = max_slug_length + 2
-        ); // +2 padding
+        ); 
         let mut difficulty = String::new();
         let mut author = String::new();
         let mut tags = String::new();
@@ -208,7 +207,6 @@ pub fn pretty_print_checker_streaming_response(mut response: impl Read) {
                             println!("{}", style("═".repeat(65)).dim());
                             println!("Some test cases did not produce the expected output.");
                             println!("{}", style("═".repeat(65)).dim());
-                            // return;
                         }
                         Some("CHECKED") => {
                             if let Some(progress) = test_progress.take() {
@@ -538,7 +536,6 @@ pub fn pretty_print_benchmark_response(mut response: impl Read) {
     let progress_style = default_progress_style();
 
     let spinner = multi_progress.add(ProgressBar::new_spinner());
-    // spinner.set_style(spinner_style.clone());
     spinner.set_prefix("🔧");
     spinner.enable_steady_tick(Duration::from_millis(80));
 
