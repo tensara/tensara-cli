@@ -732,25 +732,6 @@ fn print_invalid_problem_error(error_message: &str) {
         );
     }
 
-    println!("\n{}", style("Available problem names:").green().bold());
-    println!("{}", style("─".repeat(60)).dim());
-
-    let problems = [
-        ("conv-1d", "1D Convolution"),
-        ("conv-2d", "2D Convolution"),
-        ("gemm-relu", "General Matrix Multiply with ReLU"),
-        ("leaky-relu", "Leaky ReLU Activation"),
-        ("matrix-multiplication", "Matrix Multiplication"),
-        ("matrix-vector", "Matrix-Vector Multiplication"),
-        ("relu", "ReLU Activation"),
-        ("square-matmul", "Square Matrix Multiplication"),
-        ("vector-addition", "Vector Addition"),
-    ];
-
-    for (name, desc) in problems {
-        println!("  • {} - {}", style(name).cyan().bold(), desc);
-    }
-
     println!(
         "\n{}",
         style("See https://tensara.org/problems for details").yellow()

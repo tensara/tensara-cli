@@ -36,7 +36,7 @@ impl std::fmt::Display for GPU {
 }
 
 impl TypedValueParser for ProblemNameParser {
-    type Value = String;  // <--- now it just returns the slug string
+    type Value = String;   
 
     fn parse_ref(
         &self,
@@ -51,7 +51,7 @@ impl TypedValueParser for ProblemNameParser {
         } else {
             Err(clap::Error::raw(
                 clap::error::ErrorKind::InvalidValue,
-                format!("Unknown problem slug: {}", value_str),
+                format!("PROBLEM_NAME: {}", value_str),
             ))
         }
     }
