@@ -1,4 +1,7 @@
 use dotenv::dotenv;
+use serde_json::Value;
+use std::fs;
+use std::path::Path;
 use tensara::{
     auth::AuthInfo,
     client,
@@ -12,7 +15,6 @@ const COMPILED_BENCHMARK_ENDPOINT: &str = env!("COMPILED_BENCHMARK_ENDPOINT");
 const COMPILED_SUBMIT_ENDPOINT: &str = env!("COMPILED_SUBMIT_ENDPOINT");
 
 fn main() {
-
     #[cfg(debug_assertions)]
     dotenv().ok();
 
@@ -108,12 +110,38 @@ fn execute_auth_command(parameters: &Parameters) {
 }
 
 fn execute_init_command(parameters: &Parameters) {
-    let dir = parameters.get_directory();
-    let slug = parameters.get_problem_slug();
+    let base_dir = Path::new(parameters.get_directory());
     let language = parameters.get_language();
 
-    let path = std::path::Path::new(dir);
+    if parameters.get_all_flag() {
+        let problems_path = dirs::home_dir()
+            .expect("Could not find home directory")
+            .join(".tensara")
+            .join("problems.json");
 
+        let contents = fs::read_to_string(&problems_path).expect("Could not read problems.json");
+
+        let problems: Vec<Value> =
+            serde_json::from_str(&contents).expect("Invalid problems.json format");
+
+        for problem in problems {
+            if let Some(slug) = problem.get("slug").and_then(|s| s.as_str()) {
+                let subdir = base_dir.join(slug);
+                fs::create_dir_all(&subdir)
+                    .unwrap_or_else(|_| panic!("Failed to create directory for {}", slug));
+                println!("📁 Initializing {}", slug);
+                if let Err(e) = init(&subdir, language, slug) {
+                    eprintln!("❌ Failed to init {}: {}", slug, e);
+                }
+            }
+        }
+
+        return;
+    }
+
+    let dir = parameters.get_directory();
+    let slug = parameters.get_problem_slug();
+    let path = Path::new(dir);
     init(path, language, slug).unwrap();
 }
 

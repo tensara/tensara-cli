@@ -273,21 +273,12 @@ pub fn parse_args(args: Option<Vec<&str>>) -> Result<ArgMatches, clap::Error> {
                             .index(1)  
                     )
                     .arg(
-                        Arg::new("directory_alias")
-                            .short('d')
-                            .long("directory")
-                            .value_name("DIRECTORY")
-                            .help("Directory where you want to initialize the file.")
-                            .default_value(".")
-                            .required(false),
-                    )
-                    .arg(
                         Arg::new("problem_name")
                             .short('p')
                             .long("problem")
                             .value_name("PROBLEM_NAME")
                             .help("Name of the problem to test")
-                            .required(true)
+                            .required_unless_present("all") 
                             .value_parser(ProblemNameParser),
                     )
                     .arg(
@@ -299,6 +290,13 @@ pub fn parse_args(args: Option<Vec<&str>>) -> Result<ArgMatches, clap::Error> {
                             .default_value("cuda")
                             .required(false)
                     )
+                    .arg(
+                        Arg::new("all")
+                            .long("all")
+                            .help("Initialize all problems")
+                            .action(clap::ArgAction::SetTrue),
+                    )
+                
             );
 
     if let Some(args) = args {

@@ -13,6 +13,7 @@ pub enum CommandType {
     Submit,
     Problems,
     Auth,
+    Init,
     None,
 }
 
@@ -38,6 +39,7 @@ pub struct Parameters {
 
     // Init command fields
     directory: Option<String>,
+    all_flag: bool,
 }
 
 impl Parameters {
@@ -107,6 +109,7 @@ impl Parameters {
             sort_by,
             token: None,
             directory: None,
+            all_flag: false,
         }
     }
 
@@ -125,30 +128,38 @@ impl Parameters {
             sort_by: None,
             token,
             directory: None,
+            all_flag: false,
         }
     }
 
     fn from_init_matches(matches: &ArgMatches) -> Self {
         let directory = matches
             .get_one::<String>("directory")
-            .map(|s| s.to_string());
+            .map(|s| s.to_string())
+            .or(Some(".".to_string())); // default to current dir
 
         let language = matches.get_one::<String>("language").map(|s| s.to_string());
+        let all_flag = matches.get_flag("all");
 
-        let problem = parser::get_problem_name(matches).to_string();
+        let problem = if all_flag {
+            None
+        } else {
+            Some(parser::get_problem_name(matches).to_string())
+        };
 
         Self {
-            command_type: CommandType::Auth,
+            command_type: CommandType::Init,
             command_name: "init".to_string(),
-            problem_slug: Some(problem),
+            problem_slug: problem,
             code: None,
             dtype: None,
-            language: language,
+            language,
             gpu_type: None,
             fields: None,
             sort_by: None,
             token: None,
             directory,
+            all_flag,
         }
     }
 
@@ -178,6 +189,7 @@ impl Parameters {
             sort_by: None,
             token: None,
             directory: None,
+            all_flag: false,
         }
     }
 
@@ -236,6 +248,10 @@ impl Parameters {
 
     pub fn get_token(&self) -> Option<&String> {
         self.token.as_ref()
+    }
+
+    pub fn get_all_flag(&self) -> bool {
+        self.all_flag
     }
 
     pub fn is_problem_command(&self) -> bool {
