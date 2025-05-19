@@ -87,14 +87,6 @@ pub fn pretty_print_problems(parameters: &Parameters) {
 
 pub fn pretty_print_checker_streaming_response(mut response: impl Read) {
     let multi_progress = MultiProgress::new();
-    // let spinner_style = ProgressStyle::default_spinner()
-    //     .template("{spinner:.green} {prefix:.bold.dim} {wide_msg}")
-    //     .unwrap()
-    //     .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏");
-    // let progress_style = ProgressStyle::default_bar()
-    //     .template("{prefix:.bold.white} [{bar:40.green/blue}] {pos}/{len} {msg}")
-    //     .unwrap()
-    //     .progress_chars("█▓▒░  ");
     let spinner_style = default_spinner_style();
     let progress_style = default_progress_style();
     let mut compilation_pb = multi_progress.add(ProgressBar::new_spinner());
@@ -425,20 +417,12 @@ pub fn pretty_print_submit_response(response: impl Read) {
     let multi_progress = MultiProgress::new();
 
     let spinner = multi_progress.add(ProgressBar::new_spinner());
-    // spinner.set_style(
-    //     ProgressStyle::with_template("{spinner:.green} {wide_msg}")
-    //         .unwrap()
-    //         .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"),
-    // );
+
     spinner.set_style(default_spinner_style());
     spinner.set_message("🚀 Submitting...");
 
     let progress_bar = multi_progress.add(ProgressBar::new(0));
-    // progress_bar.set_style(
-    //     ProgressStyle::with_template("{prefix:.dim.bold} [{bar:40.green/blue}] {pos}/{len} {msg}")
-    //         .unwrap()
-    //         .progress_chars("█▓▒░  "),
-    // );
+
     progress_bar.set_style(default_progress_style());
 
     progress_bar.set_prefix("📊 Tests");
@@ -551,17 +535,6 @@ pub fn pretty_print_submit_response(response: impl Read) {
 pub fn pretty_print_benchmark_response(mut response: impl Read) {
     let multi_progress = MultiProgress::new();
 
-    // let spinner_style = ProgressStyle::default_spinner()
-    //     .template("{spinner:.green} {prefix:.bold.dim} {wide_msg}")
-    //     .unwrap()
-    //     .tick_chars("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏");
-
-    // let progress_style = ProgressStyle::default_bar()
-    //     .template("{prefix:.bold.blue} [{bar:40.blue/cyan}] {pos}/{len} {msg}")
-    //     .unwrap()
-    //     .progress_chars("█▓▒░  ");
-
-    // let spinner_style = default_spinner_style();
     let progress_style = default_progress_style();
 
     let spinner = multi_progress.add(ProgressBar::new_spinner());

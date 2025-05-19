@@ -13,8 +13,6 @@ const COMPILED_SUBMIT_ENDPOINT: &str = env!("COMPILED_SUBMIT_ENDPOINT");
 
 fn main() {
 
-    // print_auth_error();
-
     #[cfg(debug_assertions)]
     dotenv().ok();
 
