@@ -172,6 +172,7 @@ impl Parameters {
         let language = match solution_file_extension {
             "py" => "python".to_string(),
             "cu" => "cuda".to_string(),
+            "mojo" => "mojo".to_string(),
             _ => "unknown".to_string(),
         };
 

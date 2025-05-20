@@ -115,7 +115,7 @@ extern \"C\" void solution({}) {{
 
 # Note: {} are all {} device tensors
 def solution({}):
-    pass",
+    ",
             names.join(", "),
             data_type,
             param_str
@@ -151,7 +151,7 @@ from memory import UnsafePointer
 # Note: {} are all device pointers to {} arrays
 @export
 fn solution({}) raises:
-    pass",
+    ",
             names.join(", "),
             data_type,
             param_str
@@ -242,6 +242,7 @@ pub fn init(
     let file_name = match language {
         "cuda" => "sol.cu",
         "python" => "sol.py",
+        "mojo" => "sol.mojo",
         _ => "sol.txt",
     };
 
