@@ -1,7 +1,6 @@
 # CLI for Tensara submissions (Beta)
 
-Currently in beta. Allow users to practice Tensara problems from th e comfort of their own IDE. 
-For now, CLI submissions do not show up on the leaderboard. Actively working on this, expect updates in 2 weeks!
+Currently in beta. Allow users to practice Tensara problems from the comfort of their own IDE.  
 
 ## Install
 For Linux/Mac:
@@ -14,15 +13,14 @@ For Windows (untested):
 iwr -useb https://tensara.github.io/tensara-cli/install.ps1 | iex
 ```
 
-
 ## Usage
 
 Run:
-``` bash
+```bash
 tensara
 ```
 or 
-``` bash
+```bash
 tensara --help
 ```
 
@@ -43,10 +41,65 @@ Short forms for args are also supported:
 tensara checker -g T4 -p vector-addition -s tests/sol.cu 
 ```
 
-Supports the same languages and GPUS as the Tensara engine.
+Supports the same languages and GPUs as the Tensara engine.
+
+## View Problems
+
+To view available problems, use:
+```bash
+tensara problems
+```
+
+You can show different fields by using the `--fields` flag and sort by `--sort-by`:
+```bash
+tensara problems --f tags --s difficulty
+```
+
+To see all available flags:
+```bash
+tensara problems --help
+```
+
+## Authenticate
+
+Before submitting solutions, authenticate using your Tensara account:
+```bash
+tensara auth -t <token>
+```
+For more details, visit [tensara.org/cli](https://tensara.org/cli).
+
+## Init 
+
+To initialize a new project, use:
+```bash
+tensara init <directory> -p <problem_name> -l <language>
+```
+This will create a template solution file and a problem file in the specified directory.
+
+
+## Submit a Solution
+
+To submit your solution on Tensara, use the `submit` command:
+```bash
+tensara submit -g <gpu_type> -p <problem_name> -s <solution_file>
+```
+
+Example:
+```bash
+tensara submit -g T4 -p vector-addition -s solution.cu
+```
+
+Your results will be shown in the CLI. Submissions will be reflected on the Tensara dashboard.
+
+
 
 ## Uninstall
-Remove the binary
+
+Remove the binary:
 ```bash
 sudo rm /usr/local/bin/tensara
 ```
+
+---
+
+This documentation will evolve as we expand support. For the latest updates, visit [tensara.org/cli](https://tensara.org/cli).
