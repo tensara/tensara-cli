@@ -19,7 +19,7 @@ fn main() {
     dotenv().ok();
 
     let auth_info = AuthInfo::load();
-    let parameters: Parameters = Parameters::new(None);
+    let parameters: Parameters = Parameters::new();
 
     match parameters.get_command_name().as_str() {
         "checker" | "benchmark" | "submit" => {

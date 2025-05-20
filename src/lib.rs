@@ -43,7 +43,7 @@ pub struct Parameters {
 }
 
 impl Parameters {
-    pub fn new(username: Option<String>) -> Self {
+    pub fn new() -> Self {
         let command_matches = match parser::parse_args(None) {
             Ok(matches) => matches,
             Err(e) => match e.kind() {
@@ -84,7 +84,7 @@ impl Parameters {
             Some("auth") => Self::from_auth_matches(parser::get_auth_matches(&command_matches)),
             Some("init") => Self::from_init_matches(parser::get_init_matches(&command_matches)),
             _ => {
-                pretty::print_welcome_message(username);
+                pretty::print_welcome_message();
                 std::process::exit(0);
             }
         }

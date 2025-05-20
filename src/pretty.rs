@@ -41,7 +41,7 @@ pub fn pretty_print_problems(parameters: &Parameters) {
             "{:<width$}",
             problem.slug.bold(),
             width = max_slug_length + 2
-        ); 
+        );
         let mut difficulty = String::new();
         let mut author = String::new();
         let mut tags = String::new();
@@ -838,15 +838,10 @@ fn extract_value_from_error(error_message: &str) -> Option<String> {
     None
 }
 
-pub fn print_welcome_message(username: Option<String>) {
+pub fn print_welcome_message() {
     println!(
         "\n{}",
-        style(format!(
-            "✨ Welcome to Tensara, {} ✨",
-            username.unwrap_or_default()
-        ))
-        .blue()
-        .bold()
+        style(format!("✨ Welcome to Tensara ✨",)).blue().bold()
     );
     println!("{}", style("═".repeat(60)).dim());
 
@@ -861,13 +856,33 @@ pub fn print_welcome_message(username: Option<String>) {
     println!("{}", style("─".repeat(60)).dim());
     println!(
         "  • {} - {}",
+        style("auth").green().bold(),
+        "Authenticate with the Tensara API to submit solutions"
+    );
+    println!(
+        "  • {} - {}",
+        style("problems").green().bold(),
+        "List all available problems"
+    );
+    println!(
+        "  • {} - {}",
+        style("init").green().bold(),
+        "Download a problem with starter code and description"
+    );
+    println!(
+        "  • {} - {}",
         style("checker").green().bold(),
-        "Submit a solution to a problem and check if it is correct"
+        "Run and check your solution against the reference output"
     );
     println!(
         "  • {} - {}",
         style("benchmark").green().bold(),
-        "Benchmark a solution and get performance metrics"
+        "Benchmark your solution and get performance metrics"
+    );
+    println!(
+        "  • {} - {}",
+        style("submit").green().bold(),
+        "Submit a solution to Tensara"
     );
 
     println!("\n{}", style("Example Usage:").blue().bold());
@@ -891,6 +906,12 @@ pub fn print_welcome_message(username: Option<String>) {
             .yellow()
             .bright()
     );
+    println!(
+        "  • {}",
+        style("tensara submit -p relu -s solution.cu")
+            .yellow()
+            .bright()
+    );
 
     println!("\n{}", style("For Help:").blue().bold());
     println!("{}", style("─".repeat(60)).dim());
@@ -898,6 +919,9 @@ pub fn print_welcome_message(username: Option<String>) {
     println!("  • {}", style("tensara submit --help").yellow());
     println!("  • {}", style("tensara checker --help").yellow());
     println!("  • {}", style("tensara benchmark --help").yellow());
+    println!("  • {}", style("tensara problems --help").yellow());
+    println!("  • {}", style("tensara auth --help").yellow());
+    println!("  • {}", style("tensara init --help").yellow());
 
     println!("{}", style("═".repeat(60)).dim());
 }
