@@ -13,17 +13,41 @@ pub fn generate_starter_code(
     data_type: &str,
 ) -> String {
     let cpp_types = |dtype: &str| match dtype {
-        "float" => "float",
-        "int" => "int",
-        "double" => "double",
+        "float32" => "float",
+        "float16" => "double", 
+        "int32" => "int",
+        "int16" => "short",
         _ => "float",
     };
 
     let python_types = |dtype: &str| match dtype {
-        "float" => "float",
-        "int" => "int",
-        "double" => "float", // Triton doesn't support double
+        "float32" => "float",
+        "float16" => "float16",
+        "int32" => "int",
+        "int16" => "int16",
         _ => "float",
+    };
+
+    let python_misc_types = |ty: &str| match ty {
+        "int" => "int",
+        "float" => "float",
+        "size_t" => "int",
+        _ => "int",
+    };
+
+    let mojo_types = |dtype: &str| match dtype {
+        "float32" => "Float32",
+        "float16" => "Float16",
+        "int32" => "Int32",
+        "int16" => "Int16",
+        _ => "Float32",
+    };
+
+    let mojo_misc_types = |ty: &str| match ty {
+        "int" => "Int32",
+        "float" => "Float32",
+        "size_t" => "Int32",
+        _ => "Int32",
     };
 
     if language == "cuda" {
@@ -80,7 +104,7 @@ extern \"C\" void solution({}) {{
                 } else if p.ty == "[VAR]" {
                     format!("{}: {}", p.name, python_types(data_type))
                 } else {
-                    format!("{}: int", p.name)
+                    format!("{}: {}", p.name, python_misc_types(&p.ty))
                 }
             })
             .collect::<Vec<_>>()
@@ -91,6 +115,42 @@ extern \"C\" void solution({}) {{
 
 # Note: {} are all {} device tensors
 def solution({}):
+    pass",
+            names.join(", "),
+            data_type,
+            param_str
+        )
+    } else if language == "mojo" {
+        let names: Vec<_> = parameters
+            .iter()
+            .filter(|p| p.pointer.as_deref() == Some("true"))
+            .map(|p| p.name.clone())
+            .collect();
+
+        let param_str = parameters
+            .iter()
+            .map(|p| {
+                let type_str = if p.pointer.as_deref() == Some("true") {
+                    format!("UnsafePointer[{}]", mojo_types(data_type))
+                } else if p.ty == "[VAR]" {
+                    mojo_types(data_type).to_string()
+                } else {
+                    mojo_misc_types(&p.ty).to_string()
+                };
+
+                format!("{}: {}", p.name, type_str)
+            })
+            .collect::<Vec<_>>()
+            .join(", ");
+
+        format!(
+            "from gpu.host import DeviceContext
+from gpu.id import block_dim, block_idx, thread_idx
+from memory import UnsafePointer
+
+# Note: {} are all device pointers to {} arrays
+@export
+fn solution({}) raises:
     pass",
             names.join(", "),
             data_type,
