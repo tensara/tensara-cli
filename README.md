@@ -1,16 +1,17 @@
 # CLI for Tensara submissions (Beta)
 
-Currently in beta. Allow users to practice Tensara problems from the comfort of their own IDE.  
+Currently in beta. Allow users to practice Tensara problems from th e comfort of their own IDE.
+For now, CLI submissions do not show up on the leaderboard. Actively working on this, expect updates in 2 weeks!
 
 ## Install
 For Linux/Mac:
 ```bash
-curl -sSL https://tensara.github.io/tensara-cli/install.sh | bash
+curl -sSL https://get.tensara.org/install.sh | bash
 ```
 
 For Windows (untested):
 ```bash
-iwr -useb https://tensara.github.io/tensara-cli/install.ps1 | iex
+iwr -useb https://get.tensara.org/install.sh | iex
 ```
 
 ## Usage
@@ -19,8 +20,9 @@ Run:
 ```bash
 tensara
 ```
-or 
-```bash
+
+or
+``` bash
 tensara --help
 ```
 
@@ -38,7 +40,7 @@ tensara checker -g T4 --problem vector-addition --solution tests/sol.cu
 Short forms for args are also supported:
 
 ```bash
-tensara checker -g T4 -p vector-addition -s tests/sol.cu 
+tensara checker -g T4 -p vector-addition -s tests/sol.cu
 ```
 
 Supports the same languages and GPUs as the Tensara engine.
