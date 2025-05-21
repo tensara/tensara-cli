@@ -9,23 +9,43 @@ fn main() {
         }
     }
 
-    println!("cargo:rerun-if-env-changed=CLIENT_ID");
-    match std::env::var("CLIENT_ID") {
-        Ok(client_id) => {
-            println!("cargo:rustc-env=COMPILED_CLIENT_ID={}", client_id);
+    println!("cargo:rerun-if-env-changed=CHECKER_ENDPOINT");
+    match std::env::var("CHECKER_ENDPOINT") {
+        Ok(checker_endpoint) => {
+            println!(
+                "cargo:rustc-env=COMPILED_CHECKER_ENDPOINT={}",
+                checker_endpoint
+            );
         }
         Err(_) => {
-            println!("cargo:rustc-env=COMPILED_CLIENT_ID=default-development-id");
+            println!("cargo:rustc-env=COMPILED_CHECKER_ENDPOINT=default-development-endpoint");
         }
     }
 
-    println!("cargo:rerun-if-env-changed=CLIENT_SECRET");
-    match std::env::var("CLIENT_SECRET") {
-        Ok(client_secret) => {
-            println!("cargo:rustc-env=COMPILED_CLIENT_SECRET={}", client_secret);
+    println!("cargo:rerun-if-env-changed=BENCHMARK_ENDPOINT");
+    match std::env::var("BENCHMARK_ENDPOINT") {
+        Ok(benchmark_endpoint) => {
+            println!(
+                "cargo:rustc-env=COMPILED_BENCHMARK_ENDPOINT={}",
+                benchmark_endpoint
+            );
         }
         Err(_) => {
-            println!("cargo:rustc-env=COMPILED_CLIENT_SECRET=default-development-secret");
+            println!("cargo:rustc-env=COMPILED_BENCHMARK_ENDPOINT=default-development-endpoint");
+        }
+    }
+
+    println!("cargo:rerun-if-env-changed=SUBMIT_ENDPOINT");
+    match std::env::var("SUBMIT_ENDPOINT") {
+        Ok(submit_endpoint) => {
+            println!(
+                "cargo:rustc-env=COMPILED_SUBMIT_ENDPOINT={}",
+                submit_endpoint
+            );
+        }
+
+        Err(_) => {
+            println!("cargo:rustc-env=COMPILED_SUBMIT_ENDPOINT=default-development-endpoint");
         }
     }
 

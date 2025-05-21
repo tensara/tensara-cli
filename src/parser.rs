@@ -1,20 +1,7 @@
 use clap::{builder::TypedValueParser, command, Arg, ArgMatches, Command};
 use std::ffi::OsStr;
 use std::path::Path;
-
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum ProblemNames {
-    Conv1d,
-    Conv2d,
-    GemmRelu,
-    LeakyRelu,
-    MatrixMultiplication,
-    MatrixVector,
-    Relu,
-    SquareMatmul,
-    VectorAddition,
-}
+use crate::problems::is_valid_problem_slug;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GPU {
@@ -35,22 +22,6 @@ struct ProblemNameParser;
 #[derive(Clone)]
 struct GPUParser;
 
-impl std::fmt::Display for ProblemNames {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Conv1d => write!(f, "conv-1d"),
-            Self::Conv2d => write!(f, "conv-2d"),
-            Self::GemmRelu => write!(f, "gemm-relu"),
-            Self::LeakyRelu => write!(f, "leaky-relu"),
-            Self::MatrixMultiplication => write!(f, "matrix-multiplication"),
-            Self::MatrixVector => write!(f, "matrix-vector"),
-            Self::Relu => write!(f, "relu"),
-            Self::SquareMatmul => write!(f, "square-matmul"),
-            Self::VectorAddition => write!(f, "vector-addition"),
-        }
-    }
-}
-
 impl std::fmt::Display for GPU {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -65,7 +36,7 @@ impl std::fmt::Display for GPU {
 }
 
 impl TypedValueParser for ProblemNameParser {
-    type Value = ProblemNames;
+    type Value = String;   
 
     fn parse_ref(
         &self,
@@ -73,24 +44,15 @@ impl TypedValueParser for ProblemNameParser {
         _: Option<&Arg>,
         value: &OsStr,
     ) -> Result<Self::Value, clap::Error> {
-        let value_str = value.to_string_lossy().to_string().to_lowercase();
+        let value_str = value.to_string_lossy().to_string();
 
-        match value_str.as_str() {
-            "conv-1d" | "conv1d" => Ok(ProblemNames::Conv1d),
-            "conv-2d" | "conv2d" => Ok(ProblemNames::Conv2d),
-            "gemm-relu" | "gemmrelu" => Ok(ProblemNames::GemmRelu),
-            "leaky-relu" | "leakyrelu" => Ok(ProblemNames::LeakyRelu),
-            "matrix-multiplication" | "matrixmultiplication" => {
-                Ok(ProblemNames::MatrixMultiplication)
-            }
-            "matrix-vector" | "matrixvector" => Ok(ProblemNames::MatrixVector),
-            "relu" => Ok(ProblemNames::Relu),
-            "square-matmul" | "squarematmul" => Ok(ProblemNames::SquareMatmul),
-            "vector-addition" | "vectoraddition" => Ok(ProblemNames::VectorAddition),
-            _ => Err(clap::Error::raw(
+        if is_valid_problem_slug(&value_str) {
+            Ok(value_str)
+        } else {
+            Err(clap::Error::raw(
                 clap::error::ErrorKind::InvalidValue,
                 format!("PROBLEM_NAME: {}", value_str),
-            )),
+            ))
         }
     }
 }
@@ -172,8 +134,40 @@ pub fn parse_args(args: Option<Vec<&str>>) -> Result<ArgMatches, clap::Error> {
                 \nFind available problems at https://tensara.org/problems",
             )
             .subcommand(
+                Command::new("submit")
+                    .about("Submit a solution to a problem with your tensara account")
+                    .arg_required_else_help(true)
+                    .arg(
+                        Arg::new("gpu_type")
+                            .short('g')
+                            .value_name("GPU_TYPE")
+                            .help("Type of the GPU to use")
+                            .default_value("T4")
+                            .required(false)
+                            .value_parser(GPUParser),
+                    )
+                    .arg(
+                        Arg::new("problem_name")
+                            .short('p')
+                            .long("problem")
+                            .value_name("PROBLEM_NAME")
+                            .value_parser(ProblemNameParser)
+                            .help("Name of the problem to test")
+                            .required(true),
+                    )
+                    .arg(
+                        Arg::new("solution_file")
+                            .short('s')
+                            .long("solution")
+                            .value_name("SOLUTION_FILE")
+                            .help("Relative path to the solution file")
+                            .value_parser(SolutionFile)
+                            .required(true),
+                    )                    
+            )
+            .subcommand(
                 Command::new("checker")
-                    .about("Submit a solution to a problem and check if it is correct")
+                    .about("Check if your solution is correct")
                     .arg_required_else_help(true)
                     .arg(
                         Arg::new("gpu_type")
@@ -234,6 +228,75 @@ pub fn parse_args(args: Option<Vec<&str>>) -> Result<ArgMatches, clap::Error> {
                             .value_parser(SolutionFile)
                             .required(true)
                     )
+            )
+            .subcommand(
+                Command::new("problems")
+                    .about("List all problems")
+                    .arg(
+                        Arg::new("field")
+                            .short('f')
+                            .long("field")
+                            .value_name("FIELD")
+                            .help("Field(s) to display: slug, title, difficulty, author, tags")
+                            .action(clap::ArgAction::Append)
+                            .required(false),
+                    )
+                    .arg(
+                        Arg::new("sort_by")
+                            .short('s')
+                            .long("sort-by")
+                            .value_name("FIELD")
+                            .help("Field to sort by: slug, title, difficulty, author")
+                            .required(false),
+                    )
+            )
+            .subcommand(
+                Command::new("auth")
+                    .about("Authenticate with the Tensara API to submit solutions")
+                    .arg(
+                        Arg::new("token")
+                            .short('t')
+                            .long("token")
+                            .value_name("TOKEN")
+                            .help("Provide authentication token directly")
+                            .required(false),
+                    ),
+            )
+            .subcommand(
+                Command::new("init")
+                    .about("Initialize a file with starter code for a problem.")
+                    .arg(
+                        Arg::new("directory")
+                            .help("Directory where you want to initialize the file")
+                            .value_name("DIRECTORY")
+                            .required(false)
+                            .index(1)  
+                    )
+                    .arg(
+                        Arg::new("problem_name")
+                            .short('p')
+                            .long("problem")
+                            .value_name("PROBLEM_NAME")
+                            .help("Name of the problem to test")
+                            .required_unless_present("all") 
+                            .value_parser(ProblemNameParser),
+                    )
+                    .arg(
+                        Arg::new("language")
+                            .short('l')
+                            .long("language")
+                            .value_name("LANGUAGE")
+                            .help("Solution file language")
+                            .default_value("cuda")
+                            .required(false)
+                    )
+                    .arg(
+                        Arg::new("all")
+                            .long("all")
+                            .help("Initialize all problems")
+                            .action(clap::ArgAction::SetTrue),
+                    )
+                
             );
 
     if let Some(args) = args {
@@ -243,8 +306,8 @@ pub fn parse_args(args: Option<Vec<&str>>) -> Result<ArgMatches, clap::Error> {
     }
 }
 
-pub fn get_problem_name(matches: &ArgMatches) -> &ProblemNames {
-    matches.get_one::<ProblemNames>("problem_name").unwrap()
+pub fn get_problem_name(matches: &ArgMatches) -> &String {
+    matches.get_one::<String>("problem_name").unwrap()
 }
 
 pub fn get_solution_file(matches: &ArgMatches) -> &String {
@@ -263,6 +326,24 @@ pub fn get_benchmark_matches(matches: &ArgMatches) -> &ArgMatches {
     matches.subcommand_matches("benchmark").unwrap()
 }
 
+pub fn get_auth_matches(matches: &ArgMatches) -> &ArgMatches {
+    matches.subcommand_matches("auth").unwrap()
+}
+
+pub fn get_init_matches(matches: &ArgMatches) -> &ArgMatches {
+    matches.subcommand_matches("init").unwrap()
+}
+
+pub fn get_submit_matches(matches: &ArgMatches) -> &ArgMatches {
+    matches.subcommand_matches("submit").unwrap()
+}
+pub fn get_problems_matches(matches: &ArgMatches) -> &ArgMatches {
+    matches.subcommand_matches("problems").unwrap()
+}
+
 pub fn get_language_type(matches: &ArgMatches) -> &String {
     matches.get_one::<String>("language").unwrap()
 }
+
+
+

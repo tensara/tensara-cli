@@ -1,24 +1,49 @@
 pub mod auth;
 pub mod client;
+pub mod init;
 pub mod parser;
 pub mod pretty;
-
+pub mod problems;
+pub mod trpc;
 use clap::ArgMatches;
 
-const COMPILED_PROBLEM_ENDPOINT: &str = env!("COMPILED_PROBLEM_URL");
+pub enum CommandType {
+    Checker,
+    Benchmark,
+    Submit,
+    Problems,
+    Auth,
+    Init,
+    None,
+}
 
 pub struct Parameters {
-    problem_def: String,
-    problem: String,
-    solution_code: String,
-    dtype: String,
-    language: String,
+    command_type: CommandType,
+
+    // Common fields
     command_name: String,
-    gpu_type: String,
+
+    // Problem-related fields
+    problem_slug: Option<String>,
+    code: Option<String>,
+    dtype: Option<String>,
+    language: Option<String>,
+    gpu_type: Option<String>,
+
+    // Problems command fields
+    fields: Option<Vec<String>>,
+    sort_by: Option<String>,
+
+    // Auth command fields
+    token: Option<String>,
+
+    // Init command fields
+    directory: Option<String>,
+    all_flag: bool,
 }
 
 impl Parameters {
-    pub fn new(username: Option<String>) -> Self {
+    pub fn new() -> Self {
         let command_matches = match parser::parse_args(None) {
             Ok(matches) => matches,
             Err(e) => match e.kind() {
@@ -38,20 +63,107 @@ impl Parameters {
         };
 
         match command_matches.subcommand_name() {
-            Some("checker") => {
-                Self::from_subcommand("checker", parser::get_checker_matches(&command_matches))
+            Some("checker") => Self::from_subcommand(
+                CommandType::Checker,
+                "checker",
+                parser::get_checker_matches(&command_matches),
+            ),
+            Some("benchmark") => Self::from_subcommand(
+                CommandType::Benchmark,
+                "benchmark",
+                parser::get_benchmark_matches(&command_matches),
+            ),
+            Some("submit") => Self::from_subcommand(
+                CommandType::Submit,
+                "submit",
+                parser::get_submit_matches(&command_matches),
+            ),
+            Some("problems") => {
+                Self::from_problems_matches(parser::get_problems_matches(&command_matches))
             }
-            Some("benchmark") => {
-                Self::from_subcommand("benchmark", parser::get_benchmark_matches(&command_matches))
-            }
+            Some("auth") => Self::from_auth_matches(parser::get_auth_matches(&command_matches)),
+            Some("init") => Self::from_init_matches(parser::get_init_matches(&command_matches)),
             _ => {
-                pretty::print_welcome_message(username);
+                pretty::print_welcome_message();
                 std::process::exit(0);
             }
         }
     }
 
-    fn from_subcommand(subcommand: &str, matches: &ArgMatches) -> Self {
+    fn from_problems_matches(matches: &ArgMatches) -> Self {
+        let fields = matches
+            .get_many::<String>("field")
+            .map(|vals| vals.map(|v| v.to_string()).collect());
+
+        let sort_by = matches.get_one::<String>("sort_by").map(|s| s.to_string());
+
+        Self {
+            command_type: CommandType::Problems,
+            command_name: "problems".to_string(),
+            problem_slug: None,
+            code: None,
+            dtype: None,
+            language: None,
+            gpu_type: None,
+            fields,
+            sort_by,
+            token: None,
+            directory: None,
+            all_flag: false,
+        }
+    }
+
+    fn from_auth_matches(matches: &ArgMatches) -> Self {
+        let token = matches.get_one::<String>("token").map(|s| s.to_string());
+
+        Self {
+            command_type: CommandType::Auth,
+            command_name: "auth".to_string(),
+            problem_slug: None,
+            code: None,
+            dtype: None,
+            language: None,
+            gpu_type: None,
+            fields: None,
+            sort_by: None,
+            token,
+            directory: None,
+            all_flag: false,
+        }
+    }
+
+    fn from_init_matches(matches: &ArgMatches) -> Self {
+        let directory = matches
+            .get_one::<String>("directory")
+            .map(|s| s.to_string())
+            .or(Some(".".to_string())); // default to current dir
+
+        let language = matches.get_one::<String>("language").map(|s| s.to_string());
+        let all_flag = matches.get_flag("all");
+
+        let problem = if all_flag {
+            None
+        } else {
+            Some(parser::get_problem_name(matches).to_string())
+        };
+
+        Self {
+            command_type: CommandType::Init,
+            command_name: "init".to_string(),
+            problem_slug: problem,
+            code: None,
+            dtype: None,
+            language,
+            gpu_type: None,
+            fields: None,
+            sort_by: None,
+            token: None,
+            directory,
+            all_flag,
+        }
+    }
+
+    fn from_subcommand(command_type: CommandType, subcommand: &str, matches: &ArgMatches) -> Self {
         let problem = parser::get_problem_name(matches).to_string();
         let solution_file = parser::get_solution_file(matches);
         let dtype = "float32".to_string();
@@ -60,24 +172,25 @@ impl Parameters {
         let language = match solution_file_extension {
             "py" => "python".to_string(),
             "cu" => "cuda".to_string(),
+            "mojo" => "mojo".to_string(),
             _ => "unknown".to_string(),
         };
 
         let command_name = subcommand.to_string();
 
-        let problem_endpoint = std::env::var("PROBLEM_ENDPOINT")
-            .unwrap_or_else(|_| COMPILED_PROBLEM_ENDPOINT.to_string());
-        let problem_endpoint = format!("{}/{}/def.py", problem_endpoint, problem);
-        let problem_def = client::get_problem_definition(&problem_endpoint);
-
         Self {
-            problem_def,
-            problem,
-            solution_code: Self::get_file_contents(solution_file),
-            dtype,
-            language: language.to_string(),
+            command_type,
             command_name,
-            gpu_type,
+            problem_slug: Some(problem),
+            code: Some(Self::get_file_contents(solution_file)),
+            dtype: Some(dtype),
+            language: Some(language),
+            gpu_type: Some(gpu_type),
+            fields: None,
+            sort_by: None,
+            token: None,
+            directory: None,
+            all_flag: false,
         }
     }
 
@@ -85,30 +198,75 @@ impl Parameters {
         std::fs::read_to_string(solution_file).unwrap()
     }
 
+    // Getters based on command type
     pub fn get_command_name(&self) -> &String {
         &self.command_name
     }
 
-    pub fn get_problem_def(&self) -> &String {
-        &self.problem_def
+    pub fn get_problem_slug(&self) -> &String {
+        self.problem_slug
+            .as_ref()
+            .expect("Problem slug not available for this command")
     }
 
     pub fn get_solution_code(&self) -> &String {
-        &self.solution_code
+        self.code
+            .as_ref()
+            .expect("Solution code not available for this command")
     }
+
     pub fn get_gpu_type(&self) -> &String {
-        &self.gpu_type
+        self.gpu_type
+            .as_ref()
+            .expect("GPU type not available for this command")
     }
 
     pub fn get_dtype(&self) -> &String {
-        &self.dtype
+        self.dtype
+            .as_ref()
+            .expect("Data type not available for this command")
     }
 
     pub fn get_language(&self) -> &String {
-        &self.language
+        self.language
+            .as_ref()
+            .expect("Language not available for this command")
     }
 
-    pub fn get_problem(&self) -> &String {
-        &self.problem
+    pub fn get_directory(&self) -> &String {
+        self.directory
+            .as_ref()
+            .expect("Directory not available for this command")
+    }
+
+    pub fn get_fields(&self) -> Option<&Vec<String>> {
+        self.fields.as_ref()
+    }
+
+    pub fn get_sort_by(&self) -> Option<&String> {
+        self.sort_by.as_ref()
+    }
+
+    pub fn get_token(&self) -> Option<&String> {
+        self.token.as_ref()
+    }
+
+    pub fn get_all_flag(&self) -> bool {
+        self.all_flag
+    }
+
+    pub fn is_problem_command(&self) -> bool {
+        matches!(
+            self.command_type,
+            CommandType::Checker | CommandType::Benchmark | CommandType::Submit
+        )
+    }
+
+    pub fn is_problems_listing(&self) -> bool {
+        matches!(self.command_type, CommandType::Problems)
+    }
+
+    pub fn is_auth_command(&self) -> bool {
+        matches!(self.command_type, CommandType::Auth)
     }
 }

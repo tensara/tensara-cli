@@ -1,0 +1,11 @@
+{
+  "input": {
+    "json": {
+    "problemSlug": "avg-pool-1d",
+    "code": "#include <iostream>\nint main() { std::cout << \"hi\"; return 0; }",
+    "language": "cpp",
+    "gpuType": "rtx4090"
+}
+  }
+}
+
