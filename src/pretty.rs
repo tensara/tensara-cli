@@ -759,31 +759,12 @@ fn print_invalid_file_error() {
 }
 
 fn print_missing_arg_error(error_message: &str) {
-    println!("\n{}", style("⚠️ MISSING REQUIRED ARGUMENT ⚠️").red().bold());
-    println!("{}", style("═".repeat(60)).dim());
-    println!("{}", style(error_message).red());
-
-    println!("\n{}", style("Usage examples:").green().bold());
-    println!("{}", style("─".repeat(60)).dim());
-    println!(
-        "  • {}",
-        style("tensara checker --problem relu --solution ./solution.cu").yellow()
-    );
-    println!(
-        "  • {}",
-        style("tensara benchmark -g A100 --problem matrix-vector --solution ./solution.py")
-            .yellow()
-    );
-
     println!(
         "\n{}",
-        style("Run with --help for more information:").yellow()
+        style("⚠️ MISSING REQUIRED ARGUMENT ⚠️").red().bold()
     );
-    println!("  • {}", style("tensara --help").cyan());
-    println!("  • {}", style("tensara checker --help").cyan());
-    println!("  • {}", style("tensara benchmark --help").cyan());
-
     println!("{}", style("═".repeat(60)).dim());
+    println!("{}", style(error_message).red());
 }
 
 fn print_generic_error(error_message: &str) {
