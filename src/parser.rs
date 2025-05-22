@@ -258,8 +258,8 @@ pub fn parse_args(args: Option<Vec<&str>>) -> Result<ArgMatches, clap::Error> {
                             .short('t')
                             .long("token")
                             .value_name("TOKEN")
-                            .help("Provide authentication token directly")
-                            .required(false),
+                            .help("Provide authentication token. Get it at https://tensara.org/cli.")
+                            .required(true),
                     ),
             )
             .subcommand(
