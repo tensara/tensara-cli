@@ -207,6 +207,105 @@ pub fn pretty_print_checker_streaming_response(mut response: impl Read) {
                             println!("{}", style("═".repeat(65)).dim());
                             println!("Some test cases did not produce the expected output.");
                             println!("{}", style("═".repeat(65)).dim());
+
+                            if let Ok(json) = serde_json::from_str::<serde_json::Value>(json_str) {
+                                let debug_info = json["debug_info"].as_object().unwrap();
+                                println!("   {}", style("Error Details:").yellow().bold());
+
+                                // Check if there's a message field and display it prominently
+                                if let Some(message) = debug_info.get("message") {
+                                    if let Some(msg_str) = message.as_str() {
+                                        println!(
+                                            "   {} {}",
+                                            style("→").yellow(),
+                                            style(msg_str).red()
+                                        );
+                                        println!();
+                                    }
+                                }
+
+                                // Display numerical difference metrics with proper formatting
+                                let metrics = [
+                                    ("max_difference", "Maximum Difference"),
+                                    ("mean_difference", "Mean Difference"),
+                                ];
+
+                                for (key, display_name) in metrics.iter() {
+                                    if let Some(value) = debug_info.get(*key) {
+                                        if value.is_f64() {
+                                            let val = value.as_f64().unwrap();
+                                            let formatted_val = format!("{:.6e}", val);
+                                            println!(
+                                                "   {} {}: {}",
+                                                style("■").cyan(),
+                                                style(*display_name).cyan(),
+                                                formatted_val
+                                            );
+                                        }
+                                    }
+                                }
+
+                                if let Some(sample_diffs) = debug_info.get("sample_differences") {
+                                    if let Some(diffs_map) = sample_diffs.as_object() {
+                                        if !diffs_map.is_empty() {
+                                            println!(
+                                                "   {} {}:",
+                                                style("■").cyan(),
+                                                style("Sample Differences").cyan()
+                                            );
+
+                                            let max_samples = 5.min(diffs_map.len());
+                                            for (i, (coord, vals)) in
+                                                diffs_map.iter().take(max_samples).enumerate()
+                                            {
+                                                if let (Some(actual), Some(diff), Some(expected)) = (
+                                                    vals.get("actual").and_then(|v| v.as_f64()),
+                                                    vals.get("diff").and_then(|v| v.as_f64()),
+                                                    vals.get("expected").and_then(|v| v.as_f64()),
+                                                ) {
+                                                    println!(
+                        "     - Sample {}: Coord {} => actual: {:.6e}, expected: {:.6e}, diff: {:.6e}",
+                        i + 1,
+                        coord,
+                        actual,
+                        expected,
+                        diff
+                    );
+                                                }
+                                            }
+
+                                            if diffs_map.len() > max_samples {
+                                                println!(
+                                                    "     - {} more differences...",
+                                                    diffs_map.len() - max_samples
+                                                );
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // Display any other fields that might be present
+                                for (key, value) in debug_info {
+                                    if key != "message"
+                                        && key != "max_difference"
+                                        && key != "mean_difference"
+                                        && key != "sample_differences"
+                                    {
+                                        let formatted_value = if value.is_f64() {
+                                            format!("{:.6}", value.as_f64().unwrap())
+                                        } else {
+                                            value.to_string().replace("\"", "")
+                                        };
+
+                                        println!(
+                                            "   {} {}: {}",
+                                            style("■").cyan(),
+                                            style(key).cyan(),
+                                            formatted_value
+                                        );
+                                    }
+                                }
+                            }
                         }
                         Some("CHECKED") => {
                             if let Some(progress) = test_progress.take() {
@@ -612,6 +711,103 @@ pub fn pretty_print_submit_response(response: impl Read) {
                     pb.finish_and_clear();
                 }
                 spinner.abandon_with_message("❌ Wrong Answer");
+                spinner.finish();
+
+                if let Ok(json) = serde_json::from_str::<serde_json::Value>(json_data) {
+                    let debug_info = json["debug_info"].as_object().unwrap();
+                    println!("   {}", style("Error Details:").yellow().bold());
+
+                    // Check if there's a message field and display it prominently
+                    if let Some(message) = debug_info.get("message") {
+                        if let Some(msg_str) = message.as_str() {
+                            println!("   {} {}", style("→").yellow(), style(msg_str).red());
+                            println!();
+                        }
+                    }
+
+                    // Display numerical difference metrics with proper formatting
+                    let metrics = [
+                        ("max_difference", "Maximum Difference"),
+                        ("mean_difference", "Mean Difference"),
+                    ];
+
+                    for (key, display_name) in metrics.iter() {
+                        if let Some(value) = debug_info.get(*key) {
+                            if value.is_f64() {
+                                let val = value.as_f64().unwrap();
+                                let formatted_val = format!("{:.6e}", val);
+                                println!(
+                                    "   {} {}: {}",
+                                    style("■").cyan(),
+                                    style(*display_name).cyan(),
+                                    formatted_val
+                                );
+                            }
+                        }
+                    }
+
+                    if let Some(sample_diffs) = debug_info.get("sample_differences") {
+                        if let Some(diffs_map) = sample_diffs.as_object() {
+                            if !diffs_map.is_empty() {
+                                println!(
+                                    "   {} {}:",
+                                    style("■").cyan(),
+                                    style("Sample Differences").cyan()
+                                );
+
+                                let max_samples = 5.min(diffs_map.len());
+                                for (i, (coord, vals)) in
+                                    diffs_map.iter().take(max_samples).enumerate()
+                                {
+                                    if let (Some(actual), Some(diff), Some(expected)) = (
+                                        vals.get("actual").and_then(|v| v.as_f64()),
+                                        vals.get("diff").and_then(|v| v.as_f64()),
+                                        vals.get("expected").and_then(|v| v.as_f64()),
+                                    ) {
+                                        println!(
+                        "     - Sample {}: Coord {} => actual: {:.6e}, expected: {:.6e}, diff: {:.6e}",
+                        i + 1,
+                        coord,
+                        actual,
+                        expected,
+                        diff
+                    );
+                                    }
+                                }
+
+                                if diffs_map.len() > max_samples {
+                                    println!(
+                                        "     - {} more differences...",
+                                        diffs_map.len() - max_samples
+                                    );
+                                }
+                            }
+                        }
+                    }
+
+                    // Display any other fields that might be present
+                    for (key, value) in debug_info {
+                        if key != "message"
+                            && key != "max_difference"
+                            && key != "mean_difference"
+                            && key != "sample_differences"
+                        {
+                            let formatted_value = if value.is_f64() {
+                                format!("{:.6}", value.as_f64().unwrap())
+                            } else {
+                                value.to_string().replace("\"", "")
+                            };
+
+                            println!(
+                                "   {} {}: {}",
+                                style("■").cyan(),
+                                style(key).cyan(),
+                                formatted_value
+                            );
+                        }
+                    }
+                }
+
                 break;
             }
 
@@ -628,6 +824,20 @@ pub fn pretty_print_submit_response(response: impl Read) {
                 } else {
                     spinner.abandon_with_message("❌ Unknown error");
                 }
+                break;
+            }
+
+            Some("COMPILE_ERROR") => {
+                if let Some(pb) = progress_bar.take() {
+                    pb.finish_and_clear();
+                }
+                spinner.abandon_with_message("❌ Compile error");
+
+                if let Ok(json) = serde_json::from_str::<serde_json::Value>(json_data) {
+                    let details = json["details"].as_str().unwrap_or("Unknown error");
+                    println!("{}", style(details).red().bold());
+                }
+
                 break;
             }
 
