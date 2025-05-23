@@ -415,21 +415,19 @@ pub fn pretty_print_submit_response(response: impl Read) {
     let multi_progress = MultiProgress::new();
 
     let spinner = multi_progress.add(ProgressBar::new_spinner());
-
     spinner.set_style(default_spinner_style());
     spinner.set_message("🚀 Submitting...");
+    spinner.enable_steady_tick(Duration::from_millis(80));
 
-    let progress_bar = multi_progress.add(ProgressBar::new(0));
-
-    progress_bar.set_style(default_progress_style());
-
-    progress_bar.set_prefix("📊 Tests");
-
+    let mut progress_bar: Option<ProgressBar> = None;
     let reader = BufReader::new(response);
     let mut current_event: Option<String> = None;
 
     let mut passed_tests: u64 = 0;
     let mut total_tests: u64 = 0;
+    let mut total_benchmarks: u64 = 0;
+    let mut benchmark_results = vec![];
+    let mut completed = 0;
 
     for line in reader.lines().flatten() {
         spinner.tick();
@@ -451,14 +449,33 @@ pub fn pretty_print_submit_response(response: impl Read) {
                 spinner.set_message("In queue...");
             }
 
+            Some("COMPILING") => {
+                spinner.set_prefix("🔧");
+                spinner.set_message("Compiling...");
+            }
+
+            Some("CHECKING") => {
+                spinner.set_prefix("🔍");
+                spinner.set_message("Checking...");
+            }
+
             Some("TEST_RESULT") => {
+                if progress_bar.is_none() {
+                    let pb = multi_progress.add(ProgressBar::new(0));
+                    pb.set_style(default_progress_style());
+                    pb.set_prefix("📊 Tests");
+                    progress_bar = Some(pb);
+                }
+
                 if total_tests == 0 {
                     if let Ok(value) = serde_json::from_str::<serde_json::Value>(json_data) {
                         total_tests = value
                             .get("total_tests")
                             .and_then(|v| v.as_u64())
                             .unwrap_or(0);
-                        progress_bar.set_length(total_tests);
+                        if let Some(ref pb) = progress_bar {
+                            pb.set_length(total_tests);
+                        }
                     }
                 }
 
@@ -467,8 +484,10 @@ pub fn pretty_print_submit_response(response: impl Read) {
                         if result.status == "PASSED" {
                             passed_tests += 1;
                         }
-                        progress_bar.set_position(passed_tests);
-                        progress_bar.set_message(format!("✅ {passed_tests} passed"));
+                        if let Some(ref pb) = progress_bar {
+                            pb.set_position(passed_tests);
+                            pb.set_message(format!("✅ {passed_tests} passed"));
+                        }
                     }
                 }
             }
@@ -478,42 +497,128 @@ pub fn pretty_print_submit_response(response: impl Read) {
                     if let (Some(p), Some(t)) = (data.passed_tests, data.total_tests) {
                         passed_tests = p as u64;
                         total_tests = t as u64;
-                        progress_bar.set_length(total_tests);
-                        progress_bar.set_position(passed_tests);
-                        progress_bar.set_message(format!("✅ {passed_tests} passed"));
+                        if let Some(ref pb) = progress_bar {
+                            pb.set_length(total_tests);
+                            pb.set_position(passed_tests);
+                            pb.set_message(format!("✅ {passed_tests} passed"));
+                        }
+                    }
+                }
+                if let Some(pb) = progress_bar.take() {
+                    pb.finish_and_clear();
+                }
+                passed_tests = 0;
+                total_tests = 0;
+            }
+
+            Some("BENCHMARKING") => {
+                spinner.set_prefix("⚡");
+                spinner.set_message("Running benchmarks...");
+            }
+
+            Some("BENCHMARK_RESULT") => {
+                if let Ok(json) = serde_json::from_str::<serde_json::Value>(json_data) {
+                    if total_benchmarks == 0 {
+                        total_benchmarks = json["total_tests"].as_u64().unwrap_or(0);
+                        let pb = multi_progress.add(ProgressBar::new(total_benchmarks));
+                        pb.set_style(default_progress_style());
+                        pb.set_prefix("📊 Benchmarks");
+                        progress_bar = Some(pb);
+                    }
+
+                    if let Some(result) = json.get("result") {
+                        benchmark_results.push(result.clone());
+                        completed += 1;
+
+                        if let Some(pb) = &progress_bar {
+                            let name = result["name"].as_str().unwrap_or("Unnamed");
+                            let gflops = result["gflops"].as_f64().unwrap_or(0.0);
+                            let runtime = result["runtime_ms"].as_f64().unwrap_or(0.0);
+
+                            pb.set_position(completed);
+                            pb.set_message(format!(
+                                "{}: {:.2} GFLOPS ({:.2} ms)",
+                                name, gflops, runtime
+                            ));
+                        }
                     }
                 }
             }
 
-            Some("BENCHMARK_RESULT") => spinner.set_message("⚡ Benchmarking..."),
-
             Some("ACCEPTED") => {
-                if let Ok(data) = serde_json::from_str::<AcceptedData>(json_data) {
-                    let avg_rt = data.avg_runtime_ms.unwrap_or(0.0);
-                    let avg_gflops = data.avg_gflops.unwrap_or(0.0);
-                    multi_progress
-                        .println(format!(
-                            "\n🎉 \x1b[1mAccepted!\x1b[0m\n   ⏱ Avg runtime: \x1b[32m{:.2} ms\x1b[0m\n   🚀 Avg gflops: \x1b[34m{:.2}\x1b[0m",
-                            avg_rt, avg_gflops
-                        ))
-                        .unwrap();
+                if let Some(pb) = progress_bar.take() {
+                    pb.finish_and_clear();
                 }
                 spinner.finish_and_clear();
                 multi_progress.clear().unwrap();
-                println!("{}", style("🎯 SUBMISSION RESULT ").green().bold());
-                println!("{}", style("═".repeat(65)).dim());
-                println!("Tests passed: {}/{}", passed_tests, total_tests);
-                println!("{}", style("═".repeat(65)).dim());
+
+                println!(
+                    "{}",
+                    style("🎯 SUBMISSION RESULT: ACCEPTED ").green().bold()
+                );
+
+                if let Ok(data) = serde_json::from_str::<AcceptedData>(json_data) {
+                    let avg_rt = data.avg_runtime_ms.unwrap_or(0.0);
+                    let avg_gflops = data.avg_gflops.unwrap_or(0.0);
+                    println!(
+                        "⏱ Avg runtime: \x1b[32m{:.2} ms\x1b[0m\n🚀 Avg gflops: \x1b[34m{:.2}\x1b[0m",
+                        avg_rt, avg_gflops
+                    );
+                }
+
+                if let Some(pb) = progress_bar.take() {
+                    pb.finish();
+                }
+                spinner.finish();
+                multi_progress.clear().unwrap();
+                thread::sleep(Duration::from_millis(100));
+
+                if let Ok(json) = serde_json::from_str::<serde_json::Value>(json_data) {
+                    let empty = vec![];
+                    let results = json["benchmark_results"].as_array().unwrap_or(&empty);
+
+                    println!("\n{}", style("Detailed Results:").bold().underlined());
+                    println!(
+                        "{:<30} {:>10} {:>15} {:>15}",
+                        style("Test Case").bold(),
+                        style("GFLOPS").bold(),
+                        style("Runtime (ms)").bold(),
+                        style("Status").bold()
+                    );
+                    println!("{}", style("─".repeat(75)).dim());
+
+                    for (i, result) in results.iter().enumerate() {
+                        let name = result["name"].as_str().unwrap_or("Unnamed");
+                        let gflops = result["gflops"].as_f64().unwrap_or(0.0);
+                        let runtime = result["runtime_ms"].as_f64().unwrap_or(0.0);
+
+                        println!(
+                            "{} {:<3} {:<24} {:>10.2} {:>15.4} {:>15}",
+                            style("✓").green().bold(),
+                            i + 1,
+                            name,
+                            gflops,
+                            runtime,
+                            "PASSED"
+                        );
+                    }
+                }
 
                 break;
             }
 
             Some("WRONG_ANSWER") => {
+                if let Some(pb) = progress_bar.take() {
+                    pb.finish_and_clear();
+                }
                 spinner.abandon_with_message("❌ Wrong Answer");
                 break;
             }
 
             Some("ERROR") => {
+                if let Some(pb) = progress_bar.take() {
+                    pb.finish_and_clear();
+                }
                 if let Ok(data) = serde_json::from_str::<ErrorData>(json_data) {
                     let msg = data
                         .error
@@ -526,7 +631,7 @@ pub fn pretty_print_submit_response(response: impl Read) {
                 break;
             }
 
-            Some(other) => spinner.set_message(format!("ℹ️ {other}")),
+            Some(_) => {}
             None => {}
         }
     }
