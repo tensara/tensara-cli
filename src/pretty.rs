@@ -446,8 +446,10 @@ pub fn pretty_print_submit_response(response: impl Read) {
         let json_data = &line[6..];
 
         match current_event.as_deref() {
-            Some("heartbeat") => spinner.set_message("⏳ Heartbeat..."),
-            Some("IN_QUEUE") => spinner.set_message("🧘 In queue..."),
+            Some("IN_QUEUE") => {
+                spinner.set_prefix("🧘");
+                spinner.set_message("In queue...");
+            }
 
             Some("TEST_RESULT") => {
                 if total_tests == 0 {
@@ -532,10 +534,9 @@ pub fn pretty_print_submit_response(response: impl Read) {
 
 pub fn pretty_print_benchmark_response(mut response: impl Read) {
     let multi_progress = MultiProgress::new();
-
     let progress_style = default_progress_style();
-
     let spinner = multi_progress.add(ProgressBar::new_spinner());
+    spinner.set_style(default_spinner_style());
     spinner.set_prefix("🔧");
     spinner.enable_steady_tick(Duration::from_millis(80));
 
@@ -564,7 +565,14 @@ pub fn pretty_print_benchmark_response(mut response: impl Read) {
                     if let Some(status) = json.get("status").and_then(|s| s.as_str()) {
                         match status {
                             "COMPILING" => spinner.set_message("Compiling your code..."),
-                            "BENCHMARKING" => spinner.set_message("Running benchmarks..."),
+                            "SANITY_CHECK_PASSED" => {
+                                spinner.set_prefix("🔍");
+                                spinner.set_message("Sanity check passed...");
+                            }
+                            "BENCHMARKING" => {
+                                spinner.set_prefix("⚡");
+                                spinner.set_message("Running benchmarks...");
+                            }
                             "BENCHMARK_RESULT" => {
                                 if total_benchmarks == 0 {
                                     total_benchmarks = json["total_tests"].as_u64().unwrap_or(0);
