@@ -1,6 +1,6 @@
 use crate::pretty::pretty_print_auth;
 use serde::{Deserialize, Serialize};
-use std::fs::File;
+use std::fs::{create_dir_all, File};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct AuthInfo {
@@ -22,6 +22,11 @@ impl AuthInfo {
             .join(".tensara")
             .join("auth.json");
 
+        // Create .tensara directory if it doesn't exist
+        if let Some(parent) = auth_path.parent() {
+            create_dir_all(parent).expect("Failed to create .tensara directory");
+        }
+
         let file = File::create(&auth_path).expect("Failed to create auth file");
         serde_json::to_writer(file, &self).expect("Failed to write auth info");
         pretty_print_auth();
@@ -32,6 +37,14 @@ impl AuthInfo {
             .expect("Could not find home directory")
             .join(".tensara")
             .join("auth.json");
+
+        if let Some(parent) = auth_path.parent() {
+            create_dir_all(parent).expect("Failed to create .tensara directory");
+        }
+
+        if !auth_path.exists() {
+            return AuthInfo::new(String::new(), String::new());
+        }
 
         let file = File::open(&auth_path).expect("Failed to open auth file");
         serde_json::from_reader(file).expect("Failed to read auth info")
@@ -46,6 +59,10 @@ impl AuthInfo {
             .expect("Could not find home directory")
             .join(".tensara")
             .join("auth.json");
+
+        if let Some(parent) = auth_path.parent() {
+            create_dir_all(parent).expect("Failed to create .tensara directory");
+        }
 
         let file = File::create(&auth_path).expect("Failed to create auth file");
         serde_json::to_writer(file, &self).expect("Failed to write auth info");
