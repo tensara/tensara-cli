@@ -41,9 +41,9 @@ jobs:
           args: --release
         env:
           # This is passed in at compile time from github secrets, NOT ENV
-          MODAL_SLUG: ${{ secrets.MODAL_SLUG }}
-          CLIENT_ID: ${{ secrets.CLIENT_ID }}
-          CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+          CHECKER_ENDPOINT: ${{ secrets.CHECKER_ENDPOINT }}
+          BENCHMARK_ENDPOINT: ${{ secrets.BENCHMARK_ENDPOINT }}
+          SUBMIT_ENDPOINT: ${{ secrets.SUBMIT_ENDPOINT }}
           PROBLEM_ENDPOINT: ${{ secrets.PROBLEM_ENDPOINT }}
 
       - name: Rename binary for consistent naming
