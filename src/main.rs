@@ -1,7 +1,7 @@
 use dotenv::dotenv;
 use serde_json::Value;
-use std::fs;
 use std::path::Path;
+use std::{fs, process::exit};
 use tensara::{
     auth::AuthInfo,
     client,
@@ -62,44 +62,47 @@ fn execute_problem_command(parameters: &Parameters, auth_info: &AuthInfo) {
     let dtype = parameters.get_dtype();
     let code = parameters.get_solution_code();
 
-    if auth_info.is_valid() {
-        let response = match command_type.as_str() {
-            "benchmark" => client::send_post_request_to_endpoint(
-                &benchmark_endpoint,
-                problem_slug,
-                code,
-                dtype,
-                language,
-                gpu_type,
-                auth_info,
-            ),
-            "checker" => client::send_post_request_to_endpoint(
-                &checker_endpoint,
-                problem_slug,
-                code,
-                dtype,
-                language,
-                gpu_type,
-                auth_info,
-            ),
-            "submit" => client::send_post_request_to_endpoint(
-                &submit_endpoint,
-                problem_slug,
-                code,
-                dtype,
-                language,
-                gpu_type,
-                auth_info,
-            ),
-            _ => unreachable!("Invalid command type for problem execution"),
-        };
+    if !auth_info.is_valid() {
+        pretty::print_auth_error();
+        exit(1);
+    }
 
-        match command_type.as_str() {
-            "benchmark" => pretty::pretty_print_benchmark_response(response),
-            "checker" => pretty::pretty_print_checker_streaming_response(response),
-            "submit" => pretty::pretty_print_submit_response(response),
-            _ => unreachable!("Invalid command type for problem execution"),
-        }
+    let response = match command_type.as_str() {
+        "benchmark" => client::send_post_request_to_endpoint(
+            &benchmark_endpoint,
+            problem_slug,
+            code,
+            dtype,
+            language,
+            gpu_type,
+            auth_info,
+        ),
+        "checker" => client::send_post_request_to_endpoint(
+            &checker_endpoint,
+            problem_slug,
+            code,
+            dtype,
+            language,
+            gpu_type,
+            auth_info,
+        ),
+        "submit" => client::send_post_request_to_endpoint(
+            &submit_endpoint,
+            problem_slug,
+            code,
+            dtype,
+            language,
+            gpu_type,
+            auth_info,
+        ),
+        _ => unreachable!("Invalid command type for problem execution"),
+    };
+
+    match command_type.as_str() {
+        "benchmark" => pretty::pretty_print_benchmark_response(response),
+        "checker" => pretty::pretty_print_checker_streaming_response(response),
+        "submit" => pretty::pretty_print_submit_response(response),
+        _ => unreachable!("Invalid command type for problem execution"),
     }
 }
 
