@@ -1072,7 +1072,7 @@ fn print_invalid_file_error() {
     println!("\n{}", style("Requirements:").green().bold());
     println!("{}", style("─".repeat(60)).dim());
     println!("  • File must exist");
-    println!("  • File must be either a .cu (CUDA) or .py (Python) file");
+    println!("  • File must be either a .cu (CUDA) .py (Python) or .mojo (Mojo) file");
     println!("  • File must be readable");
 
     println!("\n{}", style("Example:").yellow().bright().bold());

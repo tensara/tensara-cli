@@ -110,7 +110,7 @@ impl TypedValueParser for SolutionFile {
 
         if let Some(ext) = path.extension() {
             let ext_str = ext.to_string_lossy().to_lowercase();
-            if ext_str != "cu" && ext_str != "py" {
+            if ext_str != "cu" && ext_str != "py" && ext_str != "mojo" {
                 return Err(clap::Error::raw(
                     clap::error::ErrorKind::InvalidValue,
                     format!("SOLUTION_FILE: {}", path_str),
