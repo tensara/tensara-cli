@@ -184,6 +184,7 @@ pub fn generate_comment_block(description: &str, language: &str) -> String {
     let comment_prefix = match language {
         "cuda" => "// ",
         "python" => "# ",
+        "mojo" => "# ",
         _ => "// ",
     };
 
